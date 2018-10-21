@@ -12,7 +12,7 @@ RUN apk add git && \
 FROM alpine
 WORKDIR /app
 COPY --from=builder /app/blog ./
-COPY static/ ./
-COPY views/ ./
+COPY static/ ./static/
+COPY views/ ./views/
 EXPOSE 8080
 ENTRYPOINT [ "/app/blog" ]
