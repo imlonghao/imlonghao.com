@@ -1,0 +1,41 @@
+{{template "header.html" .}}
+<div id="wiki_title">imlonghao</div>
+<div id="index">
+    <h2 id="latest">文章</h2>
+    <ul>
+        {{range .articles}}
+        <li class="pagelist">
+            <a href="./{{.ID}}.html">{{.Title}}</a>
+        </li>
+        {{end}}
+    </ul>
+    <div class="clearfix"></div>
+    <h2 id="link">链接</h2>
+    <ul>
+        {{range .links}}
+        <li class="pagelist">
+            <a href="{{.Link}}" target="_blank">{{.Name}}</a>
+        </li>
+        {{end}}
+    </ul>
+    <div class="clearfix"></div>
+    <h2 id="contact">联系</h2>
+    <ul>
+        <li class="pagelist">
+            Email: c2hpZWxkQGZhc3RtYWlsLmNvbQ==
+        </li>
+        <li class="pagelist">
+            Github:
+            <a href="https://github.com/imlonghao" target="_blank">imlonghao</a>
+        </li>
+        <li class="pagelist">
+            GPG Public Key: 262268C1
+        </li>
+        <li class="pagelist">
+            Telegram:
+            <a href="https://telegram.me/imlonghao" target="_blank">@imlonghao</a>
+        </li>
+    </ul>
+    <div classs="clearfix"></div>
+</div>
+{{template "footer.html" .}}
