@@ -12,7 +12,7 @@ var pool *pgx.ConnPool
 func afterConnect(conn *pgx.Conn) (err error) {
 	_, _ = conn.Prepare("getArticles", "SELECT id,title FROM articles WHERE time<now() ORDER BY id DESC")
 	_, _ = conn.Prepare("getLinks", "SELECT link,name FROM links ORDER BY random()")
-	_, _ = conn.Prepare("getArticle", "SELECT id, title, description, content FROM articles WHERE id=$1 and time<now()")
+	_, _ = conn.Prepare("getArticle", "UPDATE articles SET view=view+1 WHERE id=$1 AND time<now() RETURNING id, title, description, content")
 	_, _ = conn.Prepare("getSitemap", `SELECT id, to_char(time, 'YYYY-MM-DD"T"HH24:MI:SS+08:00') FROM articles WHERE time<now() ORDER BY id DESC`)
 	_, _ = conn.Prepare("getFeed", "SELECT id, title, description, time FROM articles WHERE time<now() ORDER BY id DESC LIMIT 10")
 	return
