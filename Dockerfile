@@ -4,7 +4,7 @@ WORKDIR /go/src/app
 COPY . ./
 RUN apk add git && \
     go get -u github.com/golang/dep/cmd/dep && \
-    dep ensure && \
+    dep ensure -vendor-only && \
     go build -o /app/blog
 
 FROM alpine
