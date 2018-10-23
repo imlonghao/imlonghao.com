@@ -1,12 +1,10 @@
 FROM golang:alpine AS builder
 LABEL maintainer="imlonghao <dockerfile@esd.cc>"
-WORKDIR /app
-COPY *.go ./
+WORKDIR /go/src/app
+COPY . ./
 RUN apk add git && \
-    go get github.com/jackc/pgx && \
-    go get github.com/gin-gonic/gin && \
-    go get github.com/gomarkdown/markdown && \
-    go get github.com/gorilla/feeds && \
+    go get -u github.com/golang/dep/cmd/dep && \
+    dep ensure && \
     go build -o /app/blog
 
 FROM alpine
