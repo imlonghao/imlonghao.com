@@ -112,7 +112,7 @@ func feedHandler(c *gin.Context) {
 }
 
 func catchAllHandler(c *gin.Context) {
-	articleRule := regexp.MustCompile(`^\/(\d+).html$`)
+	articleRule := regexp.MustCompile(`^\/(\d+)\.html$`)
 	params := articleRule.FindStringSubmatch(c.Request.URL.Path)
 	if len(params) == 2 {
 		articleHandler(c, params[1])
