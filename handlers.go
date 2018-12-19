@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/html"
 	"github.com/gorilla/feeds"
 )
 
@@ -48,7 +49,10 @@ func articleHandler(c *gin.Context, articleID string) {
 		c.JSON(404, gin.H{"error": "404"})
 		return
 	}
-	content = markdown.ToHTML(content, nil, nil)
+	htmlFlags := html.CommonFlags | html.NofollowLinks
+	opts := html.RendererOptions{Flags: htmlFlags}
+	renderer := html.NewRenderer(opts)
+	content = markdown.ToHTML(content, nil, renderer)
 	c.HTML(200, "article.html", gin.H{
 		"id":          id,
 		"title":       title,
