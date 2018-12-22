@@ -1,11 +1,14 @@
 </div>
+{{if .content}}
 <div id="disqus_thread"></div>
+{{end}}
 <div id="footer">
     <span>
         Copyright © 2018 imlonghao. Theme by
         <a href="http://simiki.org/" target="_blank" rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0
     </span>
 </div>
+{{if .content}}
 <script>
     var dsqjs = new DisqusJS({
         shortname: 'imlonghao',
@@ -18,6 +21,7 @@
         adminLabel: 'Mod'
     });
 </script>
+{{end}}
 </body>
 
 </html>
