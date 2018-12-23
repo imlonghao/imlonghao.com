@@ -7,6 +7,8 @@ stages:
 build:
   stage: build
   before_script:
+    - apk update
+    - apk add git
     - go get github.com/gomarkdown/markdown
     - go get github.com/gorilla/feeds
     - go get github.com/tdewolff/minify
