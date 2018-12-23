@@ -1,32 +1,13 @@
 image: golang:1.11.4-alpine3.8
 
-stages:
-  - build
-  - deploy
-
 build:
   stage: build
   before_script:
     - apk update
-    - apk add git
+    - apk add git lftp
     - go get github.com/gomarkdown/markdown
     - go get github.com/gorilla/feeds
     - go get github.com/tdewolff/minify
   script:
     - go run main.go
-  cache:
-    paths:
-      - outputs/
-    policy: push
-
-deploy:
-  stage: deploy
-  before_script:
-    - apk update
-    - apk add lftp
-  script:
     - lftp -c "open -u ${FTP_USER},${FTP_PASS} ${FTP_HOST};mput outputs/*.html;mput outputs/*.xml"
-  cache:
-    paths:
-      - outputs/
-    policy: pull
