@@ -1,15 +1,26 @@
-image: docker:latest
+image: golang:1.11.4-alpine3.8
 
-services:
-  - docker:dind
-
-before_script:
-  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-
-build-master:
+build:
   stage: build
+  before_script:
+    - go get github.com/gomarkdown/markdown
+    - go get github.com/gorilla/feeds
+    - go get github.com/tdewolff/minify
   script:
-    - docker build --pull -t "$CI_REGISTRY_IMAGE" .
-    - docker push "$CI_REGISTRY_IMAGE"
-  only:
-    - master
+    - go run main.go
+  cache:
+    paths:
+      - outputs/
+    policy: push
+
+release:
+  stage: release
+  before_script:
+    - apk update
+    - apk add lftp
+  script:
+    - lftp -c "open -u ${FTP_USER},${FTP_PASS} ${FTP_HOST};mput outputs/*.html;mput outputs/*.xml"
+  cache:
+    paths:
+      - outputs/
+    policy: pull
