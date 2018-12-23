@@ -1,8 +1,8 @@
 image: golang:1.11.4-alpine3.8
 
-stage:
+stages:
   - build
-  - release
+  - deploy
 
 build:
   stage: build
@@ -18,7 +18,7 @@ build:
     policy: push
 
 release:
-  stage: release
+  stage: deploy
   before_script:
     - apk update
     - apk add lftp
