@@ -17,7 +17,7 @@ build:
       - outputs/
     policy: push
 
-release:
+deploy:
   stage: deploy
   before_script:
     - apk update
