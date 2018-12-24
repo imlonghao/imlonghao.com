@@ -159,6 +159,7 @@ func feedGenerator() {
 	for _, article := range articles {
 		url := fmt.Sprintf("https://imlonghao.com/%d.html", article.ID)
 		feed.Items = append(feed.Items, &feeds.Item{
+			Id:          url,
 			Title:       article.Title,
 			Link:        &feeds.Link{Href: url},
 			Description: article.Description,
