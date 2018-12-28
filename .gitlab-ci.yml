@@ -10,4 +10,4 @@ build:
     - go get github.com/tdewolff/minify
   script:
     - go run main.go
-    - lftp -c "open -u ${FTP_USER},${FTP_PASS} ${FTP_HOST};mput outputs/*.html;mput outputs/*.xml"
+    - lftp -c "open -u ${FTP_USER},${FTP_PASS} ${FTP_HOST};mput outputs/*.html;mput outputs/*.xml;cd static/;mrm *;mput outputs/*.js;mput outputs/*.css"
