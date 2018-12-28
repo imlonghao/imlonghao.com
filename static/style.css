@@ -785,6 +785,9 @@ table.codehilitetable {
   border-bottom-color: #eee;
 }
 @media only screen and (max-width: 769px) {
+  li.pagelist {
+    margin-bottom: 0.5em;
+  }
   #container {
     width: 80vw;
   }
