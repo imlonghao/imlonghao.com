@@ -130,7 +130,7 @@ pre code {
 }
 #container {
   background: white;
-  width: 100vh;
+  width: 50vw;
   line-height: 1.5em;
   margin: 1.5em auto 0.5em auto;
   padding: 1.5em 2em;
@@ -141,7 +141,7 @@ pre code {
 }
 #disqus_thread {
   background: white;
-  width: 100vh;
+  width: 50vw;
   line-height: 1.5em;
   margin: 0.5em auto 1.5em auto;
   padding: 1.5em 2em;
@@ -162,7 +162,7 @@ pre code {
   border-bottom: 1px dashed #eee;
 }
 #footer {
-  width: 100vh;
+  width: 50vw;
   margin: 10px auto;
   color: #707070;
   font-size: 80%;
@@ -172,7 +172,6 @@ li.pagelist {
   width: 100%;
   margin-right: 1.5em;
   list-style-type: none;
-  white-space: nowrap;
   overflow: hidden;
 }
 li.pagelist:before {
@@ -784,4 +783,15 @@ table.codehilitetable {
 }
 .markdown-body hr {
   border-bottom-color: #eee;
+}
+@media only screen and (max-width: 769px) {
+  #container {
+    width: 80vw;
+  }
+  #disqus_thread {
+    width: 80vw;
+  }
+  #footer {
+    width: 80vw;
+  }
 }
