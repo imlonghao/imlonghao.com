@@ -17,7 +17,9 @@ import (
 	mdhtml "github.com/gomarkdown/markdown/html"
 	"github.com/gorilla/feeds"
 	"github.com/tdewolff/minify"
+	minifycss "github.com/tdewolff/minify/css"
 	minifyhtml "github.com/tdewolff/minify/html"
+	minifyjs "github.com/tdewolff/minify/js"
 )
 
 type articleModel struct {
@@ -111,6 +113,15 @@ func loadLinks() {
 	}
 }
 
+func staticHandler(m *minify.M, filename string, ext string) {
+	file, err := ioutil.ReadFile(fmt.Sprintf("static/%s.%s", filename, ext))
+	e(err)
+	file, err = m.Bytes(ext, file)
+	e(err)
+	err = ioutil.WriteFile(fmt.Sprintf("outputs/%s.%s.%s", filename, ver, ext), file, 0644)
+	e(err)
+}
+
 func indexGenerator() {
 	f, err := os.OpenFile("outputs/index.html", os.O_RDWR|os.O_CREATE, 0644)
 	e(err)
@@ -192,6 +203,16 @@ func sitemapGenerator() {
 	ioutil.WriteFile("outputs/sitemap.xml", []byte(sitemap), 0644)
 }
 
+func staticFileGenerator() {
+	m := minify.New()
+	m.AddFunc("css", minifycss.Minify)
+	m.AddFunc("js", minifyjs.Minify)
+	staticHandler(m, "ga", "js")
+	staticHandler(m, "prism", "css")
+	staticHandler(m, "prism", "js")
+	staticHandler(m, "style", "css")
+}
+
 func init() {
 	rand.Seed(time.Now().UnixNano())
 	tmpl, _ = template.ParseGlob("views/*.html")
@@ -205,4 +226,5 @@ func main() {
 	articleGenerator()
 	feedGenerator()
 	sitemapGenerator()
+	staticFileGenerator()
 }
