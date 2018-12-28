@@ -130,7 +130,7 @@ pre code {
 }
 #container {
   background: white;
-  width: 50em;
+  width: 100vh;
   line-height: 1.5em;
   margin: 1.5em auto 0.5em auto;
   padding: 1.5em 2em;
@@ -141,7 +141,7 @@ pre code {
 }
 #disqus_thread {
   background: white;
-  width: 50em;
+  width: 100vh;
   line-height: 1.5em;
   margin: 0.5em auto 1.5em auto;
   padding: 1.5em 2em;
@@ -162,6 +162,7 @@ pre code {
   border-bottom: 1px dashed #eee;
 }
 #footer {
+  width: 100vh;
   margin: 10px auto;
   color: #707070;
   font-size: 80%;
