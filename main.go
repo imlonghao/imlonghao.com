@@ -113,12 +113,16 @@ func loadLinks() {
 	}
 }
 
-func staticHandler(m *minify.M, filename string, ext string) {
-	file, err := ioutil.ReadFile(fmt.Sprintf("static/%s.%s", filename, ext))
+func staticHandler(m *minify.M, ext string, filenames ...string) {
+	var f []byte
+	for _, filename := range filenames {
+		file, err := ioutil.ReadFile(fmt.Sprintf("static/%s.%s", filename, ext))
+		e(err)
+		f = append(f, file...)
+	}
+	f, err := m.Bytes(ext, f)
 	e(err)
-	file, err = m.Bytes(ext, file)
-	e(err)
-	err = ioutil.WriteFile(fmt.Sprintf("outputs/%s.%s.%s", filename, ver, ext), file, 0644)
+	err = ioutil.WriteFile(fmt.Sprintf("outputs/%s.%s", ver, ext), f, 0644)
 	e(err)
 }
 
@@ -207,10 +211,8 @@ func staticFileGenerator() {
 	m := minify.New()
 	m.AddFunc("css", minifycss.Minify)
 	m.AddFunc("js", minifyjs.Minify)
-	staticHandler(m, "ga", "js")
-	staticHandler(m, "prism", "css")
-	staticHandler(m, "prism", "js")
-	staticHandler(m, "style", "css")
+	staticHandler(m, "js", "ga", "prism")
+	staticHandler(m, "css", "style", "prism")
 }
 
 func init() {
