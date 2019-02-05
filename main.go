@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gomarkdown/markdown"
@@ -38,6 +39,7 @@ var articles []articleModel
 var links []linkModel
 var tmpl *template.Template
 var ver string
+var wg sync.WaitGroup
 
 const letters = "abcdefghijklmnopqrstuvwxyz0123456789"
 
@@ -127,6 +129,7 @@ func staticHandler(m *minify.M, ext string, filenames ...string) {
 }
 
 func indexGenerator() {
+	defer wg.Done()
 	f, err := os.OpenFile("outputs/index.html", os.O_RDWR|os.O_CREATE, 0644)
 	e(err)
 	m := minify.New()
@@ -145,6 +148,7 @@ func indexGenerator() {
 }
 
 func articleGenerator() {
+	defer wg.Done()
 	for _, article := range articles {
 		f, err := os.OpenFile(fmt.Sprintf("outputs/%d.html", article.ID), os.O_RDWR|os.O_CREATE, 0644)
 		e(err)
@@ -165,6 +169,7 @@ func articleGenerator() {
 }
 
 func feedGenerator() {
+	defer wg.Done()
 	feed := feeds.Feed{
 		Title:       "imlonghao",
 		Link:        &feeds.Link{Href: "https://imlonghao.com/"},
@@ -186,6 +191,7 @@ func feedGenerator() {
 }
 
 func sitemapGenerator() {
+	defer wg.Done()
 	sitemap := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 	<url>
@@ -208,6 +214,7 @@ func sitemapGenerator() {
 }
 
 func staticFileGenerator() {
+	defer wg.Done()
 	m := minify.New()
 	m.AddFunc("css", minifycss.Minify)
 	m.AddFunc("js", minifyjs.Minify)
@@ -219,14 +226,16 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 	tmpl, _ = template.ParseGlob("views/*.html")
 	ver = randString(6)
+	wg.Add(5)
 }
 
 func main() {
 	loadArticles()
 	loadLinks()
-	indexGenerator()
-	articleGenerator()
-	feedGenerator()
-	sitemapGenerator()
-	staticFileGenerator()
+	go indexGenerator()
+	go articleGenerator()
+	go feedGenerator()
+	go sitemapGenerator()
+	go staticFileGenerator()
+	wg.Wait()
 }
