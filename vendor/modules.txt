@@ -1,0 +1,19 @@
+# github.com/gomarkdown/markdown v0.0.0-20181104084050-d1d0edeb5d85
+github.com/gomarkdown/markdown
+github.com/gomarkdown/markdown/html
+github.com/gomarkdown/markdown/ast
+github.com/gomarkdown/markdown/parser
+# github.com/gorilla/feeds v1.1.0
+github.com/gorilla/feeds
+# github.com/tdewolff/minify v2.3.6+incompatible
+github.com/tdewolff/minify
+github.com/tdewolff/minify/css
+github.com/tdewolff/minify/html
+github.com/tdewolff/minify/js
+# github.com/tdewolff/parse v2.3.4+incompatible
+github.com/tdewolff/parse
+github.com/tdewolff/parse/buffer
+github.com/tdewolff/parse/strconv
+github.com/tdewolff/parse/css
+github.com/tdewolff/parse/html
+github.com/tdewolff/parse/js
