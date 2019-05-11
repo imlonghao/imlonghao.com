@@ -25,10 +25,14 @@ steps:
 
   - task: Go@0
     inputs:
-      command: "custom"
-      customCommand: "run main.go"
+      command: "build"
       arguments: "-mod=vendor"
       workingDirectory: "$(modulePath)"
+    displayName: "Build website generator"
+
+  - script: |
+      ./blog
+    workingDirectory: "$(modulePath)"
     displayName: "Generate website"
 
   - script: |
