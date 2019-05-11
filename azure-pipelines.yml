@@ -1,0 +1,39 @@
+trigger:
+  - builder
+
+pool:
+  vmImage: "ubuntu-latest"
+
+variables:
+  GOBIN: "$(GOPATH)/bin"
+  GOROOT: "/usr/local/go1.11"
+  GOPATH: "$(system.defaultWorkingDirectory)/gopath"
+  modulePath: "$(GOPATH)/src/github.com/$(build.repository.name)"
+  GO111MODULE: "on"
+
+steps:
+  - script: |
+      mkdir -p '$(GOBIN)'
+      mkdir -p '$(GOPATH)/pkg'
+      mkdir -p '$(modulePath)'
+      shopt -s extglob
+      shopt -s dotglob
+      mv !(gopath) '$(modulePath)'
+      echo '##vso[task.prependpath]$(GOBIN)'
+      echo '##vso[task.prependpath]$(GOROOT)/bin'
+    displayName: "Set up the Go workspace"
+
+  - task: Go@0
+    inputs:
+      command: "custom"
+      customCommand: "run main.go"
+      arguments: "-mod=vendor"
+      workingDirectory: "$(modulePath)"
+    displayName: "Generate website"
+
+  - script: |
+      sudo apt-get update
+      sudo apt-get install -y lftp
+      lftp -c "set ssl:verify-certificate false;open -u $(FTP_USER),$(FTP_PASS) $(FTP_HOST);mput outputs/*.html;mput outputs/*.xml;cd static/;mrm *;mput outputs/*.js;mput outputs/*.css"
+    workingDirectory: "$(modulePath)"
+    displayName: "Deploy website"
