@@ -38,26 +38,12 @@ steps:
       serverUrl: $(FTP_HOST)
       username: $(FTP_USER)
       password: $(FTP_PASS)
-      rootDirectory: "$(modulePath)/outputs"
-      filePatterns: "*.@(html|xml)"
+      rootDirectory: "$(modulePath)/dist"
+      filePatterns: "**"
       remoteDirectory: "/"
       clean: false
       cleanContents: false
       overwrite: true
       preservePaths: false
       trustSSL: true
-    displayName: "Deploy website *.html *.xml"
-  - task: FtpUpload@1
-    inputs:
-      credentialsOption: "inputs"
-      serverUrl: $(FTP_HOST)
-      username: $(FTP_USER)
-      password: $(FTP_PASS)
-      rootDirectory: "$(modulePath)/outputs"
-      filePatterns: "*.@(js|css)"
-      remoteDirectory: "/static"
-      clean: true
-      overwrite: true
-      preservePaths: false
-      trustSSL: true
-    displayName: "Deploy website *.js *.css"
+    displayName: "Deploy website"

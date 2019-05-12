@@ -124,13 +124,13 @@ func staticHandler(m *minify.M, ext string, filenames ...string) {
 	}
 	f, err := m.Bytes(ext, f)
 	e(err)
-	err = ioutil.WriteFile(fmt.Sprintf("outputs/%s.%s", ver, ext), f, 0644)
+	err = ioutil.WriteFile(fmt.Sprintf("dist/static/%s.%s", ver, ext), f, 0644)
 	e(err)
 }
 
 func indexGenerator() {
 	defer wg.Done()
-	f, err := os.OpenFile("outputs/index.html", os.O_RDWR|os.O_CREATE, 0644)
+	f, err := os.OpenFile("dist/index.html", os.O_RDWR|os.O_CREATE, 0644)
 	e(err)
 	m := minify.New()
 	m.AddFunc("text/html", minifyhtml.Minify)
@@ -150,7 +150,7 @@ func indexGenerator() {
 func articleGenerator() {
 	defer wg.Done()
 	for _, article := range articles {
-		f, err := os.OpenFile(fmt.Sprintf("outputs/%d.html", article.ID), os.O_RDWR|os.O_CREATE, 0644)
+		f, err := os.OpenFile(fmt.Sprintf("dist/%d.html", article.ID), os.O_RDWR|os.O_CREATE, 0644)
 		e(err)
 		m := minify.New()
 		m.AddFunc("text/html", minifyhtml.Minify)
@@ -187,7 +187,7 @@ func feedGenerator() {
 		})
 	}
 	rss, _ := feed.ToRss()
-	ioutil.WriteFile("outputs/feed.xml", []byte(rss), 0644)
+	ioutil.WriteFile("dist/feed.xml", []byte(rss), 0644)
 }
 
 func sitemapGenerator() {
@@ -210,7 +210,7 @@ func sitemapGenerator() {
 		sitemap += s
 	}
 	sitemap += `</urlset>`
-	ioutil.WriteFile("outputs/sitemap.xml", []byte(sitemap), 0644)
+	ioutil.WriteFile("dist/sitemap.xml", []byte(sitemap), 0644)
 }
 
 func staticFileGenerator() {
