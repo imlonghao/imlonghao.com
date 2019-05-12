@@ -26,10 +26,10 @@ steps:
   - task: Go@0
     inputs:
       command: "build"
-      arguments: "-mod=vendor"
+      arguments: "-mod=vendor -o=generator"
       workingDirectory: "$(modulePath)"
     displayName: "Build website generator"
-  - script: "./blog"
+  - script: "./generator"
     workingDirectory: "$(modulePath)"
     displayName: "Generate website"
   - task: FtpUpload@1
@@ -44,6 +44,6 @@ steps:
       clean: false
       cleanContents: false
       overwrite: true
-      preservePaths: false
+      preservePaths: true
       trustSSL: true
     displayName: "Deploy website"
