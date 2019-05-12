@@ -1,43 +1,63 @@
 trigger:
-  - builder
-
+  branches:
+    include:
+      - builder
+  paths:
+    exclude:
+      - README.md
 pool:
   vmImage: "ubuntu-latest"
-
 variables:
-  GOBIN: "$(GOPATH)/bin"
-  GOROOT: "/usr/local/go1.11"
   GOPATH: "$(system.defaultWorkingDirectory)/gopath"
+  GOROOT: "/opt/hostedtoolcache/go/1.12.0"
   modulePath: "$(GOPATH)/src/github.com/$(build.repository.name)"
   GO111MODULE: "on"
-
 steps:
+  - task: GoTool@0
+    inputs:
+      version: 1.12
+    displayName: "Use Go 1.12"
   - script: |
-      mkdir -p '$(GOBIN)'
       mkdir -p '$(GOPATH)/pkg'
       mkdir -p '$(modulePath)'
       shopt -s extglob
-      shopt -s dotglob
-      mv !(gopath) '$(modulePath)'
-      echo '##vso[task.prependpath]$(GOBIN)'
-      echo '##vso[task.prependpath]$(GOROOT)/bin'
-    displayName: "Set up the Go workspace"
-
+      mv !(gopath) $(modulePath)
+    displayName: "Setup"
   - task: Go@0
     inputs:
       command: "build"
       arguments: "-mod=vendor"
       workingDirectory: "$(modulePath)"
     displayName: "Build website generator"
-
-  - script: |
-      ./blog
+  - script: "./blog"
     workingDirectory: "$(modulePath)"
     displayName: "Generate website"
-
-  - script: |
-      sudo apt-get update
-      sudo apt-get install -y lftp
-      lftp -c "set ssl:verify-certificate false;open -u $(FTP_USER),$(FTP_PASS) $(FTP_HOST);mput outputs/*.html;mput outputs/*.xml;cd static/;mrm *;mput outputs/*.js;mput outputs/*.css"
-    workingDirectory: "$(modulePath)"
-    displayName: "Deploy website"
+  - task: FtpUpload@1
+    inputs:
+      credentialsOption: "inputs"
+      serverUrl: $(FTP_HOST)
+      username: $(FTP_USER)
+      password: $(FTP_PASS)
+      rootDirectory: "$(modulePath)/outputs"
+      filePatterns: "*.@(html|xml)"
+      remoteDirectory: "/"
+      clean: false
+      cleanContents: false
+      overwrite: true
+      preservePaths: false
+      trustSSL: true
+    displayName: "Deploy website *.html *.xml"
+  - task: FtpUpload@1
+    inputs:
+      credentialsOption: "inputs"
+      serverUrl: $(FTP_HOST)
+      username: $(FTP_USER)
+      password: $(FTP_PASS)
+      rootDirectory: "$(modulePath)/outputs"
+      filePatterns: "*.@(js|css)"
+      remoteDirectory: "/static"
+      clean: true
+      overwrite: true
+      preservePaths: false
+      trustSSL: true
+    displayName: "Deploy website *.js *.css"
