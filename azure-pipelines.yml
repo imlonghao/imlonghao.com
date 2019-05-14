@@ -5,7 +5,13 @@ trigger:
   paths:
     exclude:
       - README.md
-pr: none
+pr:
+  branches:
+    include:
+      - builder
+  paths:
+    exclude:
+      - README.md
 pool:
   vmImage: "ubuntu-latest"
 variables:
@@ -47,4 +53,5 @@ steps:
       overwrite: true
       preservePaths: true
       trustSSL: true
+    condition: not(eq(variables['Build.Reason'], 'PullRequest'))
     displayName: "Deploy website"
