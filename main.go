@@ -17,10 +17,10 @@ import (
 	"github.com/gomarkdown/markdown"
 	mdhtml "github.com/gomarkdown/markdown/html"
 	"github.com/gorilla/feeds"
-	"github.com/tdewolff/minify"
-	minifycss "github.com/tdewolff/minify/css"
-	minifyhtml "github.com/tdewolff/minify/html"
-	minifyjs "github.com/tdewolff/minify/js"
+	"github.com/tdewolff/minify/v2"
+	minifycss "github.com/tdewolff/minify/v2/css"
+	minifyhtml "github.com/tdewolff/minify/v2/html"
+	minifyjs "github.com/tdewolff/minify/v2/js"
 )
 
 type articleModel struct {
