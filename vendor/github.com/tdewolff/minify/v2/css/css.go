@@ -1,5 +1,5 @@
 // Package css minifies CSS3 following the specifications at http://www.w3.org/TR/css-syntax-3/.
-package css // import "github.com/tdewolff/minify/css"
+package css
 
 import (
 	"bytes"
@@ -106,10 +106,7 @@ func (c *cssMinifier) minifyGrammar() error {
 					}
 				}
 
-				// write out the offending declaration
-				if _, err := c.w.Write(data); err != nil {
-					return err
-				}
+				// write out the offending declaration (but save the semicolon)
 				vals := c.p.Values()
 				if len(vals) > 0 && vals[len(vals)-1].TokenType == css.SemicolonToken {
 					vals = vals[:len(vals)-1]
