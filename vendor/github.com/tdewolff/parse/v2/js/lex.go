@@ -1,5 +1,5 @@
 // Package js is an ECMAScript5.1 lexer following the specifications at http://www.ecma-international.org/ecma-262/5.1/.
-package js // import "github.com/tdewolff/parse/js"
+package js
 
 import (
 	"io"
@@ -249,7 +249,7 @@ func (l *Lexer) Next() (TokenType, []byte) {
 				}
 				tt = LineTerminatorToken
 			}
-		} else if l.r.Err() != nil {
+		} else if c == 0 && l.r.Err() != nil {
 			return ErrorToken, nil
 		}
 	}

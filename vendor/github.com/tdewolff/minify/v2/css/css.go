@@ -1,5 +1,5 @@
 // Package css minifies CSS3 following the specifications at http://www.w3.org/TR/css-syntax-3/.
-package css // import "github.com/tdewolff/minify/css"
+package css
 
 import (
 	"bytes"
@@ -99,17 +99,14 @@ func (c *cssMinifier) minifyGrammar() error {
 		gt, _, data := c.p.Next()
 		switch gt {
 		case css.ErrorGrammar:
-			if perr, ok := c.p.Err().(*parse.Error); ok && perr.Message == "unexpected token in declaration" {
+			if _, ok := c.p.Err().(*parse.Error); ok {
 				if semicolonQueued {
 					if _, err := c.w.Write(semicolonBytes); err != nil {
 						return err
 					}
 				}
 
-				// write out the offending declaration
-				if _, err := c.w.Write(data); err != nil {
-					return err
-				}
+				// write out the offending declaration (but save the semicolon)
 				vals := c.p.Values()
 				if len(vals) > 0 && vals[len(vals)-1].TokenType == css.SemicolonToken {
 					vals = vals[:len(vals)-1]
@@ -663,8 +660,8 @@ func (c *cssMinifier) minifyProperty(prop css.Hash, values []Token) []Token {
 				}
 			}
 
-			j := 1
-			if values[2].TokenType == css.IdentToken {
+			j := 1 // position of second set of horizontal/vertical values
+			if 2 < len(values) && values[2].TokenType == css.IdentToken {
 				j = 2
 			}
 			hs := make([]css.Hash, 3)

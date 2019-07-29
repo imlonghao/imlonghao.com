@@ -1,5 +1,5 @@
 // Package css is a CSS3 lexer and parser following the specifications at http://www.w3.org/TR/css-syntax-3/.
-package css // import "github.com/tdewolff/parse/css"
+package css
 
 // TODO: \uFFFD replacement character for NULL bytes in strings for example, or atleast don't end the string early
 
@@ -694,7 +694,7 @@ func (l *Lexer) consumeIdentlike() TokenType {
 				l.consumeRemnantsBadURL()
 				return BadURLToken
 			}
-		} else if !l.consumeUnquotedURL() && !l.consumeWhitespace() {
+		} else if !l.consumeUnquotedURL() && !l.consumeWhitespace() { // if unquoted URL fails due to encountering whitespace, continue
 			l.consumeRemnantsBadURL()
 			return BadURLToken
 		}
