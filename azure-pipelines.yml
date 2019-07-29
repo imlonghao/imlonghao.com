@@ -39,19 +39,13 @@ steps:
   - script: "./generator"
     workingDirectory: "$(modulePath)"
     displayName: "Generate website"
-  - task: FtpUpload@1
-    inputs:
-      credentialsOption: "inputs"
-      serverUrl: $(FTP_HOST)
-      username: $(FTP_USER)
-      password: $(FTP_PASS)
-      rootDirectory: "$(modulePath)/dist"
-      filePatterns: "**"
-      remoteDirectory: "/"
-      clean: false
-      cleanContents: false
-      overwrite: true
-      preservePaths: true
-      trustSSL: true
+  - script: |
+      cd '$(modulePath)/dist'
+      git init
+      git config user.name "Azure Pipelines"
+      git config user.email "git@imlonghao.com"
+      git add .
+      git commit -m "Update"
+      git push --force --quiet "https://$(GH_TOKEN)@github.com/imlonghao/imlonghao.com.git" master:master
     condition: not(eq(variables['Build.Reason'], 'PullRequest'))
     displayName: "Deploy website"
