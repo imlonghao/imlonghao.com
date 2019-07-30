@@ -1,0 +1,11 @@
+DirectoryIndex index.html
+
+<FilesMatch "\.(ico|jpg|jpeg|png|gif|css|js)$">
+Header set Cache-Control "max-age=31536000"
+</FilesMatch>
+
+php_flag engine off
+
+RewriteEngine On
+RewriteRule ^feed$ https://imlonghao.com/feed.xml [R=301]
+RewriteRule ^rss$ https://imlonghao.com/feed.xml [R=301]
