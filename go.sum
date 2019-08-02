@@ -7,6 +7,8 @@ github.com/gomarkdown/markdown v0.0.0-20190514075636-ee6a7931a1e4 h1:oTYOfAOqQTO
 github.com/gomarkdown/markdown v0.0.0-20190514075636-ee6a7931a1e4/go.mod h1:gmFANS06wAVmF0B9yi65QKsRmPQ97tze7FRLswua+OY=
 github.com/gomarkdown/markdown v0.0.0-20190802003029-12ddac5ea31c h1:lZHUuZ54OBDBj2HVmURwxFQduiiXeDA8rlb/MymnO/M=
 github.com/gomarkdown/markdown v0.0.0-20190802003029-12ddac5ea31c/go.mod h1:JDGcbDT52eL4fju3sZ4TeHGsQwhG9nbDV21aMyhwPoA=
+github.com/gomarkdown/markdown v0.0.0-20190802012852-b3dd8ce84a34 h1:9tQFzUN1vmsKvt72dM9B9BWJmR7bBIz68eZmV3QZwO8=
+github.com/gomarkdown/markdown v0.0.0-20190802012852-b3dd8ce84a34/go.mod h1:JDGcbDT52eL4fju3sZ4TeHGsQwhG9nbDV21aMyhwPoA=
 github.com/gorilla/feeds v1.1.0 h1:pcgLJhbdYgaUESnj3AmXPcB7cS3vy63+jC/TI14AGXk=
 github.com/gorilla/feeds v1.1.0/go.mod h1:Nk0jZrvPFZX1OBe5NPiddPw7CfwF6Q9eqzaBbaightA=
 github.com/gorilla/feeds v1.1.1 h1:HwKXxqzcRNg9to+BbvJog4+f3s/xzvtZXICcQGutYfY=
