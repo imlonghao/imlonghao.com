@@ -35,11 +35,13 @@ type linkModel struct {
 	Link string
 }
 
-var articles []articleModel
-var links []linkModel
-var tmpl *template.Template
-var ver string
-var wg sync.WaitGroup
+var (
+	articles []articleModel
+	links    []linkModel
+	tmpl     *template.Template
+	ver      string
+	wg       sync.WaitGroup
+)
 
 const letters = "abcdefghijklmnopqrstuvwxyz0123456789"
 
