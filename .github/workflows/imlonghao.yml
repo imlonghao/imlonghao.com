@@ -1,0 +1,29 @@
+name: imlonghao.com
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.12
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.12
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Build website generator
+        run: |
+          go build -mod=vendor -o=generator
+      - name: Generate website
+        run: ./generator
+      - name: Deploy website
+        if: github.event_name == 'push' && github.ref == 'refs/heads/builder'
+        run: |
+          cd dist
+          git init
+          git config user.name "Github Actions"
+          git config user.email "git@imlonghao.com"
+          git add .
+          git commit -m "Update"
+          git push --force --quiet "https://${{ secrets.GH_TOKEN }}@github.com/imlonghao/imlonghao.com.git" master:master
