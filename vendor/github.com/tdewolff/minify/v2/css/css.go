@@ -604,8 +604,8 @@ func (c *cssMinifier) minifyProperty(prop css.Hash, values []Token) []Token {
 			}
 
 			// background-position or background-size
-			// TODO: allow only functions that return Number, Percentage or Dimension token? Make whitelist?
-			if values[i].TokenType == css.NumberToken || values[i].TokenType == css.DimensionToken || values[i].TokenType == css.PercentageToken || values[i].TokenType == css.IdentToken && (h == css.Left || h == css.Right || h == css.Top || h == css.Bottom || h == css.Center) || values[i].TokenType == css.FunctionToken {
+			// TODO: allow only functions that return Number, Percentage or Dimension token. Make whitelist?
+			if values[i].TokenType == css.NumberToken || values[i].TokenType == css.DimensionToken || values[i].TokenType == css.PercentageToken || values[i].TokenType == css.IdentToken && (h == css.Left || h == css.Right || h == css.Top || h == css.Bottom || h == css.Center) || values[i].TokenType == css.FunctionToken && bytes.Equal(values[i].Data, []byte("calc(")) {
 				j := i + 1
 				for ; j < len(values); j++ {
 					if values[j].TokenType == css.IdentToken {
@@ -613,7 +613,7 @@ func (c *cssMinifier) minifyProperty(prop css.Hash, values []Token) []Token {
 						if h == css.Left || h == css.Right || h == css.Top || h == css.Bottom || h == css.Center {
 							continue
 						}
-					} else if values[j].TokenType == css.NumberToken || values[j].TokenType == css.DimensionToken || values[j].TokenType == css.PercentageToken || values[j].TokenType == css.FunctionToken {
+					} else if values[j].TokenType == css.NumberToken || values[j].TokenType == css.DimensionToken || values[j].TokenType == css.PercentageToken || values[i].TokenType == css.FunctionToken && bytes.Equal(values[i].Data, []byte("calc(")) {
 						continue
 					}
 					break
@@ -655,7 +655,7 @@ func (c *cssMinifier) minifyProperty(prop css.Hash, values []Token) []Token {
 		if len(values) == 3 || len(values) == 4 {
 			// remove zero offsets
 			for _, i := range []int{len(values) - 1, 1} {
-				if values[i].TokenType == css.NumberToken && bytes.Equal(values[i].Data, []byte("0")) || values[i].TokenType == css.PercentageToken && bytes.Equal(values[i].Data, []byte("0%")) {
+				if 2 < len(values) && (values[i].TokenType == css.NumberToken && bytes.Equal(values[i].Data, []byte("0")) || values[i].TokenType == css.PercentageToken && bytes.Equal(values[i].Data, []byte("0%"))) {
 					values = append(values[:i], values[i+1:]...)
 				}
 			}
@@ -766,7 +766,7 @@ func (c *cssMinifier) minifyProperty(prop css.Hash, values []Token) []Token {
 		}
 	case css.Ms_Filter:
 		alpha := []byte("progid:DXImageTransform.Microsoft.Alpha(Opacity=")
-		if values[0].TokenType == css.StringToken && bytes.HasPrefix(values[0].Data[1:len(values[0].Data)-1], alpha) {
+		if values[0].TokenType == css.StringToken && 2 < len(values[0].Data) && bytes.HasPrefix(values[0].Data[1:len(values[0].Data)-1], alpha) {
 			values[0].Data = append(append([]byte{values[0].Data[0]}, []byte("alpha(opacity=")...), values[0].Data[1+len(alpha):]...)
 		}
 	}
@@ -957,10 +957,10 @@ func (c *cssMinifier) shortenToken(prop css.Hash, tt css.TokenType, data []byte)
 		data = removeStringNewlinex(data)
 	case css.URLToken:
 		parse.ToLower(data[:3])
-		if len(data) > 10 {
+		if 10 < len(data) {
 			uri := parse.TrimWhitespace(data[4 : len(data)-1])
 			delim := byte('"')
-			if uri[0] == '\'' || uri[0] == '"' {
+			if 1 < len(uri) && (uri[0] == '\'' || uri[0] == '"') {
 				delim = uri[0]
 				uri = removeStringNewlinex(uri)
 				uri = uri[1 : len(uri)-1]
