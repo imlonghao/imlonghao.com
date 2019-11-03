@@ -27,7 +27,3 @@ jobs:
           git add .
           git commit -m "Update"
           git push --force --quiet "https://${{ secrets.GH_TOKEN }}@github.com/imlonghao/imlonghao.com.git" master:master
-      - name: Trigger webhook
-        if: github.event_name == 'push' && github.ref == 'refs/heads/builder'
-        run: |
-          curl ${{ secrets.WEBHOOK }} > /dev/null
