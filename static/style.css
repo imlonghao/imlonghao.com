@@ -449,6 +449,7 @@ table.codehilitetable {
 .markdown-body p {
   margin-top: 0;
   margin-bottom: 10px;
+  white-space: pre-line;
 }
 .markdown-body blockquote {
   margin: 0;
@@ -695,6 +696,7 @@ table.codehilitetable {
   max-width: 100%;
   box-sizing: content-box;
   background-color: #fff;
+  display: block;
 }
 .markdown-body img[align="right"] {
   padding-left: 20px;
