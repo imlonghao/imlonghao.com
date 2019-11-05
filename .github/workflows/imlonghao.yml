@@ -4,6 +4,7 @@ on: [push, pull_request]
 
 jobs:
   build:
+    if: "!contains(github.event.commits[0].message, '[skip ci]')"
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go 1.13
