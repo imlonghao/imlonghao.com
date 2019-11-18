@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -41,6 +42,7 @@ var (
 	tmpl     *template.Template
 	ver      string
 	wg       sync.WaitGroup
+	lazyLoad *regexp.Regexp
 )
 
 const letters = "abcdefghijklmnopqrstuvwxyz0123456789"
@@ -80,6 +82,8 @@ func readArticle(filename string) (string, string, time.Time, string) {
 	opts := mdhtml.RendererOptions{Flags: htmlFlags}
 	renderer := mdhtml.NewRenderer(opts)
 	content = markdown.ToHTML(content, nil, renderer)
+
+	content = lazyLoad.ReplaceAll(content, []byte(`<img class="lazy" data-src="$1">`))
 
 	return title, desc, t, string(content)
 }
@@ -229,6 +233,7 @@ func init() {
 	tmpl, _ = template.ParseGlob("views/*.html")
 	ver = randString(6)
 	wg.Add(5)
+	lazyLoad = regexp.MustCompile(`<img src="(.*?)" alt="" />`)
 }
 
 func main() {
