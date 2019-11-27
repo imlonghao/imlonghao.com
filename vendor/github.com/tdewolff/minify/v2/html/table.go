@@ -5,12 +5,16 @@ import "github.com/tdewolff/parse/v2/html"
 type traits uint16
 
 const (
-	rawTag traits = 1 << iota
+	normalTag traits = 1 << iota
+	rawTag
 	nonPhrasingTag
 	objectTag
 	omitPTag // omit p end tag if it is followed by this start tag
 	keepPTag // keep p end tag if it is followed by this end tag
-	booleanAttr
+)
+
+const (
+	booleanAttr traits = 1 << iota
 	caselessAttr
 	urlAttr
 	trimAttr
@@ -18,24 +22,38 @@ const (
 
 var tagMap = map[html.Hash]traits{
 	html.A:          keepPTag,
+	html.Abbr:       normalTag,
 	html.Address:    nonPhrasingTag | omitPTag,
+	html.Area:       normalTag,
 	html.Article:    nonPhrasingTag | omitPTag,
 	html.Aside:      nonPhrasingTag | omitPTag,
 	html.Audio:      objectTag | keepPTag,
+	html.B:          normalTag,
+	html.Base:       normalTag,
+	html.Bb:         normalTag,
+	html.Bdi:        normalTag,
+	html.Bdo:        normalTag,
 	html.Blockquote: nonPhrasingTag | omitPTag,
 	html.Body:       nonPhrasingTag,
 	html.Br:         nonPhrasingTag,
 	html.Button:     objectTag,
 	html.Canvas:     objectTag,
 	html.Caption:    nonPhrasingTag,
+	html.Cite:       normalTag,
+	html.Code:       normalTag,
 	html.Col:        nonPhrasingTag,
 	html.Colgroup:   nonPhrasingTag,
+	html.Data:       normalTag,
+	html.Datalist:   normalTag,
 	html.Dd:         nonPhrasingTag,
 	html.Del:        keepPTag,
 	html.Details:    omitPTag,
+	html.Dfn:        normalTag,
+	html.Dialog:     normalTag,
 	html.Div:        nonPhrasingTag | omitPTag,
 	html.Dl:         nonPhrasingTag | omitPTag,
 	html.Dt:         nonPhrasingTag,
+	html.Em:         normalTag,
 	html.Embed:      nonPhrasingTag,
 	html.Fieldset:   nonPhrasingTag | omitPTag,
 	html.Figcaption: nonPhrasingTag | omitPTag,
@@ -53,14 +71,19 @@ var tagMap = map[html.Hash]traits{
 	html.Hgroup:     nonPhrasingTag,
 	html.Hr:         nonPhrasingTag | omitPTag,
 	html.Html:       nonPhrasingTag,
+	html.I:          normalTag,
 	html.Iframe:     rawTag | objectTag,
 	html.Img:        objectTag,
 	html.Input:      objectTag,
 	html.Ins:        keepPTag,
-	html.Keygen:     objectTag,
+	html.Kbd:        normalTag,
+	html.Label:      normalTag,
+	html.Legend:     normalTag,
 	html.Li:         nonPhrasingTag,
+	html.Link:       normalTag,
 	html.Main:       nonPhrasingTag | omitPTag,
 	html.Map:        keepPTag,
+	html.Mark:       normalTag,
 	html.Math:       rawTag,
 	html.Menu:       omitPTag,
 	html.Meta:       nonPhrasingTag,
@@ -69,28 +92,50 @@ var tagMap = map[html.Hash]traits{
 	html.Noscript:   nonPhrasingTag | keepPTag,
 	html.Object:     objectTag,
 	html.Ol:         nonPhrasingTag | omitPTag,
+	html.Optgroup:   normalTag,
+	html.Option:     normalTag,
 	html.Output:     nonPhrasingTag,
 	html.P:          nonPhrasingTag | omitPTag,
+	html.Param:      normalTag,
 	html.Picture:    objectTag,
 	html.Pre:        nonPhrasingTag | omitPTag,
 	html.Progress:   objectTag,
 	html.Q:          objectTag,
+	html.Rp:         normalTag,
+	html.Rt:         normalTag,
+	html.Ruby:       normalTag,
+	html.S:          normalTag,
+	html.Samp:       normalTag,
 	html.Script:     rawTag,
 	html.Section:    nonPhrasingTag | omitPTag,
 	html.Select:     objectTag,
+	html.Slot:       normalTag,
+	html.Small:      normalTag,
+	html.Source:     normalTag,
+	html.Span:       normalTag,
+	html.Strong:     normalTag,
 	html.Style:      rawTag | nonPhrasingTag,
+	html.Sub:        normalTag,
+	html.Summary:    normalTag,
+	html.Sup:        normalTag,
 	html.Svg:        rawTag | objectTag,
 	html.Table:      nonPhrasingTag | omitPTag,
 	html.Tbody:      nonPhrasingTag,
 	html.Td:         nonPhrasingTag,
+	html.Template:   normalTag,
 	html.Textarea:   rawTag | objectTag,
 	html.Tfoot:      nonPhrasingTag,
 	html.Th:         nonPhrasingTag,
 	html.Thead:      nonPhrasingTag,
+	html.Time:       normalTag,
 	html.Title:      nonPhrasingTag,
 	html.Tr:         nonPhrasingTag,
+	html.Track:      normalTag,
+	html.U:          normalTag,
 	html.Ul:         nonPhrasingTag | omitPTag,
+	html.Var:        normalTag,
 	html.Video:      objectTag | keepPTag,
+	html.Wbr:        normalTag,
 }
 
 var attrMap = map[html.Hash]traits{

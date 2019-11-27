@@ -1,4 +1,4 @@
-# Minify <a name="minify"></a> [![Build Status](https://travis-ci.org/tdewolff/minify.svg?branch=master)](https://travis-ci.org/tdewolff/minify) [![GoDoc](http://godoc.org/github.com/tdewolff/minify?status.svg)](http://godoc.org/github.com/tdewolff/minify) [![Coverage Status](https://coveralls.io/repos/github/tdewolff/minify/badge.svg?branch=master)](https://coveralls.io/github/tdewolff/minify?branch=master) [![Join the chat at https://gitter.im/tdewolff/minify](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/tdewolff/minify?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+# Minify <a name="minify"></a> [![Build Status](https://travis-ci.org/tdewolff/minify.svg?branch=master)](https://travis-ci.org/tdewolff/minify) [![GoDoc](http://godoc.org/github.com/tdewolff/minify?status.svg)](http://godoc.org/github.com/tdewolff/minify) [![Coverage Status](https://coveralls.io/repos/github/tdewolff/minify/badge.svg?branch=master)](https://coveralls.io/github/tdewolff/minify?branch=master)
 
 **[Online demo](https://go.tacodewolff.nl/minify) if you need to minify files *now*.**
 
@@ -8,7 +8,7 @@
 
 ---
 
-*Did you know that the shortest valid piece of HTML5 is `<!doctype html><html lang=en><title>x</title>`? See for yourself at the [W3C Validator](http://validator.w3.org/)!*
+*Did you know that the shortest valid piece of HTML5 is `<!doctype html><html lang><title>x</title>`? See for yourself at the [W3C Validator](http://validator.w3.org/)!*
 
 Minify is a minifier package written in [Go][1]. It provides HTML5, CSS3, JS, JSON, SVG and XML minifiers and an interface to implement any other minifier. Minification is the process of removing bytes from a file (such as whitespace) without changing its output and therefore shrinking its size and speeding up transmission over the internet and possibly parsing. The implemented minifiers are designed for high performance.
 
@@ -251,7 +251,6 @@ The SVG minifier uses these minifications:
 - minify colors
 - shorten lengths and numbers and remove default `px` unit
 - shorten `path` data
-- convert `rect`, `line`, `polygon`, `polyline` to `path`
 - use relative or absolute positions in path data whichever is shorter
 
 TODO:
