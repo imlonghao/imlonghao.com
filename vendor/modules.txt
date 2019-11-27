@@ -5,12 +5,12 @@ github.com/gomarkdown/markdown/html
 github.com/gomarkdown/markdown/parser
 # github.com/gorilla/feeds v1.1.1
 github.com/gorilla/feeds
-# github.com/tdewolff/minify/v2 v2.5.2+incompatible
+# github.com/tdewolff/minify/v2 v2.6.0+incompatible
 github.com/tdewolff/minify/v2
 github.com/tdewolff/minify/v2/css
 github.com/tdewolff/minify/v2/html
 github.com/tdewolff/minify/v2/js
-# github.com/tdewolff/parse/v2 v2.3.9
+# github.com/tdewolff/parse/v2 v2.3.13
 github.com/tdewolff/parse/v2
 github.com/tdewolff/parse/v2/buffer
 github.com/tdewolff/parse/v2/css
