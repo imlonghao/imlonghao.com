@@ -1,4 +1,4 @@
-# github.com/gomarkdown/markdown v0.0.0-20191229055418-359dc4b9d66b
+# github.com/gomarkdown/markdown v0.0.0-20200105192015-0948ad373b2c
 github.com/gomarkdown/markdown
 github.com/gomarkdown/markdown/ast
 github.com/gomarkdown/markdown/html
