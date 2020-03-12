@@ -8,7 +8,7 @@
 
 ---
 
-*Did you know that the shortest valid piece of HTML5 is `<!doctype html><html lang><title>x</title>`? See for yourself at the [W3C Validator](http://validator.w3.org/)!*
+*Did you know that the shortest valid piece of HTML5 is `<!doctype html><title>x</title>`? See for yourself at the [W3C Validator](http://validator.w3.org/)!*
 
 Minify is a minifier package written in [Go][1]. It provides HTML5, CSS3, JS, JSON, SVG and XML minifiers and an interface to implement any other minifier. Minification is the process of removing bytes from a file (such as whitespace) without changing its output and therefore shrinking its size and speeding up transmission over the internet and possibly parsing. The implemented minifiers are designed for high performance.
 
@@ -41,6 +41,10 @@ The core functionality associates mimetypes with minification functions, allowin
 		- [Mediatypes](#mediatypes)
 	- [Examples](#examples)
 		- [Common minifiers](#common-minifiers)
+		- [External minifiers](#external-minifiers)
+            - [Closure Compiler](#closure-compiler)
+            - [UglifyJS](#uglifyjs)
+            - [esbuild](#esbuild)
 		- [Custom minifier](#custom-minifier-example)
 		- [ResponseWriter](#responsewriter)
 		- [Templates](#templates)
@@ -424,13 +428,37 @@ func main() {
 	m.AddFuncRegexp(regexp.MustCompile("[/+]json$"), json.Minify)
 	m.AddFuncRegexp(regexp.MustCompile("[/+]xml$"), xml.Minify)
 
-	// Or use the following for better minification of JS but lower speed:
-	// m.AddCmdRegexp(regexp.MustCompile("^(application|text)/(x-)?(java|ecma)script$"), exec.Command("java", "-jar", "build/compiler.jar"))
-
 	if err := m.Minify("text/html", os.Stdout, os.Stdin); err != nil {
 		panic(err)
 	}
 }
+```
+
+### External minifiers
+Below are some examples of using common external minifiers.
+
+#### Closure Compiler
+See [Closure Compiler Application](https://developers.google.com/closure/compiler/docs/gettingstarted_app). Not tested.
+
+``` go
+m.AddCmdRegexp(regexp.MustCompile("^(application|text)/(x-)?(java|ecma)script$"),
+    exec.Command("java", "-jar", "build/compiler.jar"))
+```
+
+### UglifyJS
+See [UglifyJS](https://github.com/mishoo/UglifyJS2).
+
+``` go
+m.AddCmdRegexp(regexp.MustCompile("^(application|text)/(x-)?(java|ecma)script$"),
+    exec.Command("uglifyjs"))
+```
+
+### esbuild
+See [esbuild](https://github.com/evanw/esbuild).
+
+``` go
+m.AddCmdRegexp(regexp.MustCompile("^(application|text)/(x-)?(java|ecma)script$"),
+    exec.Command("esbuild", "$in.js", "--minify", "--outfile=$out.js"))
 ```
 
 ### <a name="custom-minifier-example"></a> Custom minifier
