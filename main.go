@@ -224,7 +224,7 @@ func staticFileGenerator() {
 	m := minify.New()
 	m.AddFunc("css", minifycss.Minify)
 	m.AddFunc("js", minifyjs.Minify)
-	staticHandler(m, "js", "prism")
+	staticHandler(m, "js", "prism", "disqus", "global")
 	staticHandler(m, "css", "style", "prism")
 }
 
