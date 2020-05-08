@@ -1,4 +1,4 @@
-if (document.getElementById("disqus_thread0") !== null) {
+if (document.getElementById("disqus_thread") !== null) {
   var dsqjs = new DisqusJS({
     shortname: "imlonghao",
     siteName: "imlonghao",
