@@ -35,6 +35,8 @@ github.com/gomarkdown/markdown v0.0.0-20200505003445-60dbb4eba081 h1:B2BCFO1OpDq
 github.com/gomarkdown/markdown v0.0.0-20200505003445-60dbb4eba081/go.mod h1:aii0r/K0ZnHv7G0KF7xy1v0A7s2Ljrb5byB7MO5p6TU=
 github.com/gomarkdown/markdown v0.0.0-20200505060318-1cb7f9e97ec0 h1:JAvBZAs1tezYa9x4PIG70vq3kgrwwlfS0i8/sAIajR8=
 github.com/gomarkdown/markdown v0.0.0-20200505060318-1cb7f9e97ec0/go.mod h1:aii0r/K0ZnHv7G0KF7xy1v0A7s2Ljrb5byB7MO5p6TU=
+github.com/gomarkdown/markdown v0.0.0-20200511185550-6e300993a645 h1:xDQ/U5ds+1ZRc363tGSmnepf8UoCXGSyf2sSYtLCCi8=
+github.com/gomarkdown/markdown v0.0.0-20200511185550-6e300993a645/go.mod h1:aii0r/K0ZnHv7G0KF7xy1v0A7s2Ljrb5byB7MO5p6TU=
 github.com/gorilla/feeds v1.1.0 h1:pcgLJhbdYgaUESnj3AmXPcB7cS3vy63+jC/TI14AGXk=
 github.com/gorilla/feeds v1.1.0/go.mod h1:Nk0jZrvPFZX1OBe5NPiddPw7CfwF6Q9eqzaBbaightA=
 github.com/gorilla/feeds v1.1.1 h1:HwKXxqzcRNg9to+BbvJog4+f3s/xzvtZXICcQGutYfY=
