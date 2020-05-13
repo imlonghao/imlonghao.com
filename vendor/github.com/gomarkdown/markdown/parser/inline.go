@@ -352,19 +352,21 @@ func link(p *Parser, data []byte, offset int) (int, ast.Node) {
 		if data[i] == '\'' || data[i] == '"' {
 			i++
 			titleB = i
+			titleEndCharFound := false
 
 		findtitleend:
 			for i < len(data) {
 				switch {
 				case data[i] == '\\':
-					i += 2
-
-				case data[i] == ')':
-					break findtitleend
-
-				default:
 					i++
+
+				case data[i] == data[titleB-1]: // matching title delimiter
+					titleEndCharFound = true
+
+				case titleEndCharFound && data[i] == ')':
+					break findtitleend
 				}
+				i++
 			}
 
 			if i >= len(data) {
