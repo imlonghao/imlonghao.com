@@ -16,6 +16,7 @@ body {
 }
 small#index-date {
   float: right;
+  margin-right: 2em;
 }
 a {
   color: #0645ad;
