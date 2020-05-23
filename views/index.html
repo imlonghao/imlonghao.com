@@ -6,6 +6,7 @@
         {{range .articles}}
         <li class="pagelist">
             <a href="./{{.ID}}.html">{{.Title}}</a>
+            <small id="index-date">{{.CreatedTimeStr}}</small>
         </li>
         {{end}}
     </ul>
@@ -15,7 +16,6 @@
         {{range .links}}
         <li class="pagelist">
             <a href="{{.Link}}" target="_blank" rel="noopener">{{.Name}}</a>
-            <small id="index-date">{{.CreatedTime}}</small>
         </li>
         {{end}}
     </ul>

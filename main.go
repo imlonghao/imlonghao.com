@@ -25,11 +25,12 @@ import (
 )
 
 type articleModel struct {
-	ID          int
-	Title       string
-	Description string
-	Content     string
-	CreatedTime time.Time
+	ID             int
+	Title          string
+	Description    string
+	Content        string
+	CreatedTime    time.Time
+	CreatedTimeStr string
 }
 type linkModel struct {
 	Name string
@@ -101,6 +102,7 @@ func loadArticles() {
 			desc,
 			content,
 			t,
+			t.Format("2006-01-02 15:04:05"),
 		})
 	}
 	sort.Slice(articles, func(i, j int) bool {
