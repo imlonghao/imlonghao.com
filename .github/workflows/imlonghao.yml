@@ -17,7 +17,7 @@ jobs:
         run: |
           go build -o=generator
       - name: Generate website
-        run: ./generator
+        run: TZ=Asia/Shanghai ./generator
       - name: Push website
         if: github.event_name == 'push' && github.ref == 'refs/heads/builder'
         run: |
