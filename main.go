@@ -79,7 +79,7 @@ func readArticle(filename string) (string, string, time.Time, string) {
 
 	content = []byte(strings.Join(line[5:], "\n"))
 
-	htmlFlags := mdhtml.CommonFlags | mdhtml.NofollowLinks
+	htmlFlags := mdhtml.CommonFlags | mdhtml.NofollowLinks | mdhtml.TOC
 	opts := mdhtml.RendererOptions{Flags: htmlFlags}
 	renderer := mdhtml.NewRenderer(opts)
 	content = markdown.ToHTML(content, nil, renderer)
