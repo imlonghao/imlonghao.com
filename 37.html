@@ -1,0 +1,34 @@
+<!doctype html><html lang=zh-cn><title>编译 OpenWRT 平台上的 gdut8021xclient 校园网客户端 - imlonghao</title><meta name=description content="gdut8021xclient 是 hazytint 在 njit8021xclient 基础上进行修改的、适用于广东某工业大学的 802.1X 客户端"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./37.html>编译 OpenWRT 平台上的 gdut8021xclient 校园网客户端</a></div></div><div class=clearfix></div><div id=title>编译 OpenWRT 平台上的 gdut8021xclient 校园网客户端</div><div id=content class=markdown-body><h2>背景</h2><h3>gdut8021xclient</h3><p><code>gdut8021xclient</code> 是 <a href=https://github.com/hazytint rel=nofollow>hazytint</a> 在 <code>njit8021xclient</code> 基础上进行修改的、适用于广东某工业大学的 802.1X 客户端<p>项目地址：<a href=https://github.com/hazytint/gdut8021xclient rel=nofollow>https://github.com/hazytint/gdut8021xclient</a><h3>路由器</h3><p>在上一年很早很早之前，我就买了这个路由器，并不是什么大品牌，只是根据他的宣传，比较适合我们折腾党折腾，所以就买了。在我折腾之后有一次返厂的经历，因为被我刷成了砖，除此之外，感觉还是可以的。<p>之前一直都是刷了极路由 1S 的固件，因为极路由固件中带有一个名为「华 3 认证」的功能，可以不用另行安装就直接可以接入校园网。<p>但过了一段时间之后，莫名其妙的在使用这个路由器上网的时候会提示「您真的要上网吗」，然后需要我回答一个问题，然而这真是十分莫名其妙。<p>虽然直接 F12 在 Console 中输入 login() 调用登录函数就可以了，但是依然是十分不爽的，于是重刷了 OpenWRT，便有了这篇文章。<p>路由器硬件信息：<ul><li>型号：OY-0001<li>CPU：MT7620A 580MHz<li>内存：128MB DDR2<li>闪存：16MB SPI</ul><h2>编译过程</h2><p>在编译 OpenWRT 的 ipk 的时候，我们通常采用 Ubuntu 的系统。<p>在这次的编译中，我采用的是 <code>Ubuntu 14.04 LTS 64bit</code><p>由于采用的是一个全新的系统（我用 lxc 新开的），因此建议把软件源换成服务器最快的，减少我们等待的时间，这里建议使用 <a href=https://github.com/jblakeman/apt-select rel=nofollow>apt-select</a> 这个项目。<h3>更新系统并安装依赖</h3><pre><code>apt-get clean
+apt-get update &amp;&amp; apt-get dist-upgrade -y
+apt-get install -y git-core subversion build-essential gcc-multilib libncurses5-dev libssl-dev zlib1g-dev gawk flex gettext wget unzip python ccache sudo vim libxml-parser-perl dh-autoreconf
+</code></pre><h3>创建编译过程中所用的普通用户</h3><p>在编译过程中，不允许使用 root 用户进行编译，因此我们需要新建一个普通用户并且赋予这个新增加的用户 sudo 权限<pre><code>useradd -m openwrt
+echo 'openwrt ALL=NOPASSWD: ALL' &gt; /etc/sudoers.d/openwrt
+</code></pre><h3>切换到刚刚新建的用户</h3><pre><code>su openwrt
+cd ~
+</code></pre><h3>下载 SDK</h3><p>你可以通过<a href=https://downloads.openwrt.org/chaos_calmer/15.05/ rel=nofollow>这个页面</a>，根据 CPU 的厂家、型号找到适合的 SDK<p>正如上文所提到的，我的路由器 CPU 是 mt7620 的，因此我在 <code>/ramips/mt7620/</code> 目录下找到了这个 SDK<p>具体的下载地址为：<code>https://downloads.openwrt.org/chaos_calmer/15.05/ramips/mt7620/OpenWrt-SDK-15.05-ramips-mt7620_gcc-4.8-linaro_uClibc-0.9.33.2.Linux-x86_64.tar.bz2</code><p>下载地址因不同的路由器 CPU 而异<pre><code>wget https://downloads.openwrt.org/chaos_calmer/15.05/ramips/mt7620/OpenWrt-SDK-15.05-ramips-mt7620_gcc-4.8-linaro_uClibc-0.9.33.2.Linux-x86_64.tar.bz2
+tar xf OpenWrt-SDK-15.05-ramips-mt7620_gcc-4.8-linaro_uClibc-0.9.33.2.Linux-x86_64.tar.bz2
+cd OpenWrt-SDK-15.05-ramips-mt7620_gcc-4.8-linaro_uClibc-0.9.33.2.Linux-x86_64
+</code></pre><h3>下载 gdut8021xclient</h3><p>我们通过 git 获取源代码，并且将 OpenWRT 的 <code>makefile</code> 设置为默认，然后生成 <code>configure</code> 文件<pre><code>git clone https://github.com/hazytint/gdut8021xclient package/gdut8021xclient
+cd package/gdut8021xclient
+cp Makefile_OpenWrt Makefile
+autoreconf --install
+cd ../../
+</code></pre><h3>选择需要编译的模块</h3><p>首先，我们通过这个命令进入选择界面<pre><code>make menuconfig
+</code></pre><p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/z4qn9I5vplTQKMX.png><p>进入 <code>Network</code><p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/Tx61AmyiMJFbjPV.png><p>默认情况下，这两个 package 都是标记为 <code>M</code> 的，意思就是编译打包出来。<p>其中，<code>njit8021xclient</code> 是主要的客户端，<code>njit8021xclient-web</code> 是 <code>njit8021xclient</code> 的 luci 界面，我个人感觉这个并没有什么用，功能比较鸡肋，因此可以取消编译这个 <code>njit8021xclient-web</code>。<p>选中 <code>njit8021xclient-web</code> 然后按一下空格即可，让前面的 <code>M</code> 去掉<p>确认完自己所需要安装的东西后，退出这个界面。<h3>开始编译</h3><p>这里的话，一般来说是比较废时间的，但是在 SDK 上面编译的话速度还是比较快的。<p>先来看看这台机子有多少核，待会编译的时候为了节省速度可以跑满所有核心<pre><code>cat /proc/cpuinfo | grep processor | wc -l
+</code></pre><p>根据我这台机子的话，16 核，官方推荐 +1 ，因此输入这个命令编译<pre><code>make -j 17 V=99
+</code></pre><p>如果不需要调试信息的话把后面的 <code>V=99</code> 去掉即可。<p>一般来说，几分钟就可以编译完成了<p>编译完成之后，在 <code>/bin/ramips/packages/base</code> (<code>ramips</code> 根据 CPU 的不同有所不同请主要分别) 就可以找到我们刚刚编译的 <code>njit8021xclient_1.3-testing_ramips_24kec.ipk</code> 文件。<h3>开始安装</h3><p>编译完成之后，当然你就可以有很多种方式可以将这个 ipk 文件拉到你的电脑上，再拉进你的路由器上面。<p>添加下面几行到 <code>/etc/opkg.conf</code><pre><code>arch all 100
+arch ralink 200
+arch ramips 300
+arch ramips_24kec 300
+</code></pre><p>安装的话也是一条命令的事<pre><code>opkg install njit8021xclient_1.3-testing_ramips_24kec.ipk`
+</code></pre><p>重启路由器<p>然后，我们可以通过 <code>njit-client</code> 简单测试是否安装成功<pre><code>[root@PandoraBox:/root]#njit-client
+命令行参数错误！
+正确的调用格式例子如下：
+    njit-client username password
+    njit-client username password eth0
+    njit-client username password eth1
+(注：若不指明网卡，默认情况下将使用eth0)
+</code></pre><p>显示上述信息即表示安装成功<p>注：由于我之前安装了一些其他的库，因此可能你的会有所报错，希望你可以回帖指出或者自行搜索解决方案。<h3>参考资料</h3><p><a href=https://github.com/NemoAlex/openwrt-wrt1900ac-docs/wiki/%E7%AE%80%E6%98%93%E6%8C%87%E5%8D%97%EF%BC%9A%E4%BD%BF%E7%94%A8-OpenWrt-%E7%9A%84%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91-SDK-%E6%9D%A5%E7%BC%96%E8%AF%91-ipk-%E8%BD%AF%E4%BB%B6%E5%8C%85 rel=nofollow>简易指南：使用 OpenWrt 的交叉编译 SDK 来编译 ipk 软件包</a><p><a href=https://github.com/NemoAlex/openwrt-buildroot rel=nofollow>NemoAlex/openwrt-buildroot: A buildroot for OpenWrt project</a><p><a href=https://github.com/hazytint/gdut8021xclient rel=nofollow>gdut8021xclient</a></div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

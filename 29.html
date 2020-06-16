@@ -1,0 +1,16 @@
+<!doctype html><html lang=zh-cn><title>gotunnel.org 网站简介 - imlonghao</title><meta name=description content="gotunnel.org 是一个非官方的 ngrokd 服务器，由本人建立并部署在一台香港的 VPS 上。"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./29.html>gotunnel.org 网站简介</a></div></div><div class=clearfix></div><div id=title>gotunnel.org 网站简介</div><div id=content class=markdown-body><p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/DHVWlLribkmA7Tf.png><p>gotunnel.org 是一个非官方的 ngrokd 服务器，由本人建立并部署在一台香港的 VPS 上。<p><strong>ngrokd 版本： 1.7</strong><h2>什么是 ngrok</h2><p>ngrok 是一个反向代理，用于从一个公共的节点创造一个安全的隧道到本地运行着的 web 服务。ngrok 捕捉并且分析所有通过该隧道的流量以便用来检查以及重播。<p>总之，这玩意很有用。<h2>使用教程</h2><p>Windows / Linux / Mac OS X 系统的使用方法均大同小异。<h3>获取客户端</h3><p>为了使用 gotunnel.org 的服务，首先你需要有一个客户端。<p>我们并没有使用自签名的证书，因此所有的客户端均可以用于连接 gotunnel.org<p>%s 需替换成：<pre><code>Windows64
+Windows
+MacOSX32
+MacOSX
+LinuxARM
+Linux32
+Linux
+FreeBSD32
+FreeBSD
+</code></pre><h3>创建配置文件</h3><pre><code>server_addr: &quot;gotunnel.org:3334&quot;
+trust_host_root_certs: true
+</code></pre><p>复制并保存上面的代码即可，这里我用 ngrok.cfg 作为文件名。<p>更多配置，请看 <a href=https://imlonghao.com/28.html rel=nofollow>「翻译」ngrok 1.X 配置文档</a><h3>启动 ngrok</h3><pre><code>ngrok -config ngrok.cfg -subdomain mysite 80
+</code></pre><p>更多参数，请看 <a href=https://imlonghao.com/27.html rel=nofollow>「翻译」ngrok 1.X 使用文档</a><h2>其他说明</h2><p>###TCP 转发<p>ngrok 原生支持 TCP 转发，我并没有对 TCP 转发的端口进行限制，这就意味着你可以在合理的范围内进行 TCP 转发操作。<h3>自定义域名</h3><p>gotunnel.org 支持自定义域名，首先，你需要给你的域名设置一个 CNAME 记录，绑定到 gotunnel.org 上来。<p>关于自定义域名，请看 <a href=https://imlonghao.com/28.html rel=nofollow>「翻译」ngrok 1.X 配置文档</a><p>（注：由于缺少认证，因此不排除你的域名被他人使用，建议使用完就把域名解析关闭掉<h3>流量说明</h3><p>gotunnel.org 禁止进行大流量的操作，仅允许在合理的范围内进行网页的调试，例如调试微信等等。<h3>备案说明</h3><p>gotunnel.org 该域名暂未有备案的打算，因此微信的 JS SDK 可能无法进行白名单的绑定<p>（不过不影响其他微信的调试<hr><p>最后，希望你们使用愉快！</div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

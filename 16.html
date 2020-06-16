@@ -1,0 +1,21 @@
+<!doctype html><html lang=zh-cn><title>利用闲置 VPS 挂 eBesucher 赚钱 (Debian) - imlonghao</title><meta name=description content="eBesucher 是德国一家老牌的挂机网赚以及网站推广的网站，官网号称从2002年就开始经营，域名注册于2005年09月07日，经营了也快10年的，所以来讲信誉应该来说是值得信赖的。"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./16.html>利用闲置 VPS 挂 eBesucher 赚钱 (Debian)</a></div></div><div class=clearfix></div><div id=title>利用闲置 VPS 挂 eBesucher 赚钱 (Debian)</div><div id=content class=markdown-body><h2>认识 eBesucher</h2><p>eBesucher 是德国一家老牌的挂机网赚以及网站推广的网站，官网号称从 2002 年就开始经营，域名注册于 2005 年 09 月 07 日，经营了也快 10 年的，所以来讲信誉应该来说是值得信赖的。<p><strong>eBesucher 官网带 AFF 地址：<a href="http://www.ebesucher.com/?ref=imlonghao" rel=nofollow>http://www.ebesucher.com/?ref=imlonghao</a></strong><p>eBesucher 官网不带 AFF 地址：<a href=http://www.ebesucher.com/ rel=nofollow>http://www.ebesucher.com/</a><h2>为什么要挂这个</h2><p>如今 VPS 市场非常发达，很多人都不断剁手剁手买了很多 VPS ，很多都是看他便宜，于是就买了，但是实际上你并不需要这么多 VPS 。于是乎，除了主要用的几个 VPS 外，大多数 VPS 都被你们浪费掉了，他们就一直被你们放着。<p>钱已经花出去了，为什么不搞点东西来赚赚钱呢？<p>曾经，挂迅雷矿也是个不错的选择，但是如今，迅雷矿已经宣布停止，所以，我们已经不能再挂迅雷矿了。<p>所以，还是挂一个挂机网赚吧。何乐而不为？<h2>教程</h2><p>测试系统 Debian <sup>7</sup>&frasl;<sub>8</sub> ，建议内存稍微大一点，不然浏览器会被系统自动 kill 掉。<p>建议你们逐行输入，尽量不要一大段就复制去了 SSH 窗口。<h3>安装 VNC</h3><pre><code>apt-get update
+apt-get install xorg lxde-core tightvncserver -y
+</code></pre><p>设置 VNC 密码，并进行窗口配置。<p>其中我们需要自己设置以下密码，会有提示出现，输入两次即可。<pre><code>tightvncserver :1
+</code></pre><p>重启桌面<pre><code>tightvncserver -kill :1
+echo &quot;lxterminal &amp; /usr/bin/lxsession -s LXDE &amp;&quot;&gt;&gt;~/.vnc/xstartup
+tightvncserver :1
+</code></pre><p>安装火狐浏览器并安装 Flash，浏览器在 Debian 中叫 <code>iceweasel</code> 。<pre><code>echo &quot;deb ftp://ftp.debian.org/debian stable main contrib non-free&quot;&gt;&gt;/etc/apt/sources.list
+apt-get update
+apt-get install iceweasel flashplugin-nonfree -y
+</code></pre><p>设置重启脚本，将下列代码保存到 <code>/root</code> ，并命名为 <code>ebesucher.sh</code><p>请注意你要把浏览的页面改成你自己的，不然就帮我挂了。<pre><code>export DISPLAY=localhost:1.0
+rm -rf ~/.vnc/*.log /tmp/plugtmp* &gt; /dev/null
+killall /usr/bin/x-www-browser &gt;&gt; /dev/null 2&gt;&amp;1
+/usr/bin/iceweasel -new-tab http://www.ebesucher.com/surfbar/imlonghao &gt; /dev/null 2&gt;&amp;1 &amp;
+</code></pre><p>设置自动重启，这里我设置每 2 小时重启一次<pre><code>chmod +x /root/ebesucher.sh
+echo &quot;0 */2 * * * root /root/ebesucher.sh&quot; &gt;&gt;/etc/crontab
+service cron restart
+</code></pre><p>重启 VNC 并启动浏览器，运行<pre><code>/root/ebesucher.sh
+</code></pre><p>到此，我们的安装就已经完成了。<h2>优化</h2><h3>安装官方 Firefox Add-On</h3><p>使用 VNC 连接到我们的服务器，在浏览器中直接打开<a href=https://www.ebesucher.com/data/firefoxaddon/latest.xpi，他就会自动安装下载了，在插件里面设置好我们的用户名，并且将三个选项都选上即可。 rel=nofollow>https://www.ebesucher.com/data/firefoxaddon/latest.xpi，他就会自动安装下载了，在插件里面设置好我们的用户名，并且将三个选项都选上即可。</a><h3>关闭 Firefox 的浏览记录</h3><p>由于我们在不断的浏览器会产生大量的日志，会占用大量的硬盘空间，因此我们需要关闭浏览记录。<h3>关闭 Firefox 安装提示</h3><p>在部分我们的挂的网页中，Firefox 可能会提示风险网站，这样会导致我们的挂机中断，建议关闭这个功能。<p>（请主要不要将重要的东西存放在 VPS 上避免不测）</div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

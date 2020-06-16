@@ -1,0 +1,50 @@
+<!doctype html><html lang=zh-cn><title>树莓派通过 n2n 实现内网穿透 - imlonghao</title><meta name=description content="由于我将要把一台树莓派放在学校内网挂校内的 PT ，并且这台树莓派又是通过路由器接入校园网的，那这样问题就来了。"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./21.html>树莓派通过 n2n 实现内网穿透</a></div></div><div class=clearfix></div><div id=title>树莓派通过 n2n 实现内网穿透</div><div id=content class=markdown-body><h2>背景</h2><p>由于我将要把一台树莓派放在学校内网挂校内的 PT ，并且这台树莓派又是通过路由器接入校园网的，那这样问题就来了。<p>假如我不在宿舍，但是我又想连上我的树莓派看看电影下载完了没有，那么我是没有办法连接上我的树莓派的。<p>如果用路由器进行端口映射的话，那么我必须在校园网的网络环境之中，并且我得知道我路由器的 IP ，由于校园网使用 DHCP 动态获取 IP 地址，因此我很难知道我路由器的 IP。<p>如果我在校外的话，那么就基本上没有什么方法可以访问到我的树莓派了。<p>经过一轮折腾，我发现了 n2n 这个工具。<h2>简介</h2><p>以下摘自维基百科并由本人进行人工翻译。我还没有过 4 级翻译不好你不要打我<p>n2n 是一个开放源代码的 2 层跨越 3 层的 VPN 程序，该程序利用了点对点的架构来处理网络间的成员关系和路由。<p>不像大多数 VPN 程序那样， n2n 可以连接位于 NAT 路由器后面的计算机。这些连接在双方计算机都能连接的第三方计算机的帮助下建立起来。这台第三方的计算机，我们称之为 supernode，他可以为 NAT 的计算机之间传输信息。<p>这是一个免费的开源软件，以 <code>GNU General Public License v3</code> 协议开源。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/I8ufRQlYxGdaEnL.jpg><p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/GxXmKrvyOEWUB4I.jpg><h2>准备</h2><p>由于我们需要自己自建整个 n2n ，因此我们需要一台有公网固定 IP 地址的服务器来充当 <code>supernode</code> 的角色<p>刚好，前几天买了一年阿里云的学生机，正愁不知道做什么东西比较好，现在终于能派上用场了。<h2>环境</h2><p>Supernode：Debian 8.3<p>Edge：Raspbian 2015.05.05<h2>安装</h2><p>如果使用 <code>apt-get</code> 或者 <code>yum</code> 进行安装的，由于软件库的版本不同，因此可能会出现不兼容的问题。<p>n2n 有两种协议，一种是 <code>v1</code> 协议，另一种是 <code>v2</code> 协议，两种是不兼容的。<p>因此，我们最好使用编译安装，一开始我还担心我的树莓派的小 CPU 编译不出来，结果还挺快的！<p>Ubuntu / Debian 系列<pre><code>sudo apt-get install subversion build-essential libssl-dev
+</code></pre><p>CentOS 系列<pre><code>sudo yum install subversion gcc-c++ openssl-devel
+</code></pre><p>不管你是什么系统，下面的代码都是一样的，我们使用 v2 协议。<pre><code>svn co https://svn.ntop.org/svn/ntop/trunk/n2n
+cd n2n/n2n_v2
+make
+sudo make install
+</code></pre><p>如果不出问题的话，我们就安装成功了。<h2>配置</h2><h3>Supernode 配置</h3><p>Supernode 并不需要 root 权限就可以运行，不过如果你是想使用小于 1024 的端口，就需要 root 权限了。<p>运行以下命令即可把 <code>supernode</code> 运行在后台。<pre><code>supernode -l 12345
+</code></pre><p>更多的用法如下<pre><code>pi@raspberrypi ~ $ supernode -h
+supernode usage
+-l &lt;lport&gt;  Set UDP main listen port to &lt;lport&gt;
+-f          Run in foreground.
+-v          Increase verbosity. Can be used multiple times.
+-h          This help message.
+</code></pre><h3>Edge 配置</h3><p>简单修改并运行以下命令即可运行 <code>edge</code><pre><code>edge -d edge0 -a 10.0.0.10 -c [community] -k [encrypt key] -u 1000 -g 1000 -l [Supernode IP]:[Supernode Port]
+</code></pre><p>例子<pre><code>edge -d edge0 -a 10.0.0.10 -c myn2nline -k password123 -u 1000 -g 1000 -l 123.121.22.102:43321
+</code></pre><p>更多的用法如下<pre><code>pi@raspberrypi ~ $ edge -h
+Welcome to n2n v.2.1.0 for unknown
+Built on Sep 26 2015 16:11:34
+Copyright 2007-09 - http://www.ntop.org
+
+edge -d &lt;tun device&gt; -a [static:|dhcp:]&lt;tun IP address&gt; -c &lt;community&gt; [-k &lt;encrypt key&gt; | -K &lt;key file&gt;] [-s &lt;netmask&gt;] [-u &lt;uid&gt; -g &lt;gid&gt;][-f][-m &lt;MAC address&gt;]
+-l &lt;supernode host:port&gt; [-p &lt;local port&gt;] [-M &lt;mtu&gt;] [-r] [-E] [-v] [-t &lt;mgmt port&gt;] [-b] [-h]
+
+-d &lt;tun device&gt;          | tun device name
+-a &lt;mode:address&gt;        | Set interface address. For DHCP use '-r -a dhcp:0.0.0.0'
+-c &lt;community&gt;           | n2n community name the edge belongs to.
+-k &lt;encrypt key&gt;         | Encryption key (ASCII) - also N2N_KEY=&lt;encrypt key&gt;. Not with -K.
+-K &lt;key file&gt;            | Specify a key schedule file to load. Not with -k.
+-s &lt;netmask&gt;             | Edge interface netmask in dotted decimal notation (255.255.255.0).
+-l &lt;supernode host:port&gt; | Supernode IP:port
+-b                       | Periodically resolve supernode IP
+                         : (when supernodes are running on dynamic IPs)
+-p &lt;local port&gt;          | Fixed local UDP port.
+-u &lt;UID&gt;                 | User ID (numeric) to use when privileges are dropped.
+-g &lt;GID&gt;                 | Group ID (numeric) to use when privileges are dropped.
+-f                       | Do not fork and run as a daemon; rather run in foreground.
+-m &lt;MAC address&gt;         | Fix MAC address for the TAP interface (otherwise it may be random)
+                         : eg. -m 01:02:03:04:05:06
+-M &lt;mtu&gt;                 | Specify n2n MTU of edge interface (default 1400).
+-r                       | Enable packet forwarding through n2n community.
+-E                       | Accept multicast MAC addresses (default=drop).
+-v                       | Make more verbose. Repeat as required.
+-t                       | Management UDP Port (for multiple edges on a machine).
+
+Environment variables:
+  N2N_KEY                | Encryption key (ASCII). Not with -K or -k.
+</code></pre><p>需要注意的是， <code>-a</code> 参数所指定的是你连接上 n2n 网络上的 IP 地址，显然这是不可以重复的。<p>你可以使用 DHCP 服务器进行分配 IP ，使用 <code>-a dhcp:10.0.0.22</code> 意思就是使用 <code>10.0.0.22</code> 作为 DHCP 服务器进行 IP 地址的分配，而 <code>10.0.0.22</code> 这台服务器也是需要连接上同一个 Edge 的。<p>更多的用法你们可以自己参考上面的文档。<h2>错误解决</h2><p><code>n2n[4405]: ERROR: ioctl() [Operation not permitted][-1]</code><p>在我的树莓派上面运行的时候出现了上面的问题，显然这是由于权限不足导致的，因为 edge 需要 root 权限来创建一个 TAP 接口，因此我们需要通过 <code>sudo</code> 来运行。<h2>实践</h2><p>经过了我的一番折腾，我在手机上安装了 <code>n2n</code> 的客户端，<a href="https://play.google.com/store/apps/details?id=org.zhoubug.n2n_gui" rel=nofollow>Google Play</a><p>设置好了协议， <code>supernode</code> 的 IP 和端口，设置了组（相当于用户名），设置了密码，然后就可以连接了！<p>这是手机上面的 n2n 客户端<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/eFis1IrkKJzbnHj.jpg><p>使用 JuiceSSH 进行本地的 ping 测试<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/2CvzyTdqi58Jw4r.jpg><p><code>10.0.0.10</code> 是我的树莓派的地址，<code>10.0.0.11</code> 是我手机设置的 IP 地址<h2>最后</h2><p>如果你们想要开机自动启动的话，设置 <code>/etc/rc.local</code> 就可以。<p>n2n 是个很好玩的东西，假如你在家里面也有几台类似 nas 之类的东西，你在学校也有路由器之类的东西，那么你就可以将他们组成一个内网了，无论在哪里都可以访问到这几台设备了。只需要你在每一天设备上都设置好 edge ，部署在同一个 Supernode 上，并且设置相同的密钥和 community 就好了。</div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

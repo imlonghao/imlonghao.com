@@ -1,0 +1,62 @@
+<!doctype html><html lang=zh-cn><title>Debian 8.1 安装配置 pyspider 爬虫 - imlonghao</title><meta name=description content="pyspider 是由 binux 开发的具有以下特性的开源 python 爬虫程序"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./9.html>Debian 8.1 安装配置 pyspider 爬虫</a></div></div><div class=clearfix></div><div id=title>Debian 8.1 安装配置 pyspider 爬虫</div><div id=content class=markdown-body><h2>简介</h2><p><a href=https://github.com/binux/pyspider rel=nofollow>pyspider</a> 是由 <a href=https://github.com/binux rel=nofollow>binux</a> 开发的具有以下特性的开源 python 爬虫程序：<ul><li>抓取、更新调度多站点的特定的页面<li>需要对页面进行结构化信息提取<li>灵活可扩展，稳定可监控</ul><p>pyspider 的设计基础是：以 python 脚本驱动的抓取环模型爬虫<ul><li>通过 python 脚本进行结构化信息的提取， follow 链接调度抓取控制，实现最大的灵活性<li>通过 web 化的脚本编写、调试环境。 web 展现调度状态<li>抓取环模型成熟稳定，模块间相互独立，通过消息队列连接，从单进程到多机分布式灵活拓展</ul><p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/ltsCnVmZAKciHGL.png><p>参考资料：<a href=http://blog.binux.me/2014/02/pyspider-architecture/ rel=nofollow>pyspider 架构设计</a><h2>安装</h2><h3>添加 Dotdeb 源 / 更新系统</h3><p>由于我使用的是 Debian 系统，因此在安装 redis 的时候，我们可以直接使用 <a href=https://www.dotdeb.org/ rel=nofollow>Dotdeb</a> 的源。这样可以为我们节省很多编译的时间，也可以让我们节省不必要的配置工作。<p>首先，我们要将 Dotdeb 的源添加到 <code>sources.list</code> 当中。<p>将下面的代码添加到 <code>/etc/apt/sources.list</code> 中，你可以将他添加到最下面就好了。<pre><code>deb http://packages.dotdeb.org jessie all
+deb-src http://packages.dotdeb.org jessie all
+</code></pre><p>然后我们需要安装 Dotdeb 的 GnuPG key<pre><code>wget http://www.dotdeb.org/dotdeb.gpg
+sudo apt-key add dotdeb.gpg
+</code></pre><p>当你看到一个 <code>ok</code> 后，说明这个 GnuPG key 已经添加成功了，我们就可以更新系统了。<pre><code>apt-get update
+apt-get -y dist-upgrade
+</code></pre><h3>安装 pyspider</h3><p>我们可以参照 Ubuntu 的系统安装来操作，参考：<a href=http://docs.pyspider.org/en/latest/Deployment/ rel=nofollow>Deployment</a><pre><code>apt-get install -y python python-dev python-distribute python-pip libcurl4-openssl-dev libxml2-dev libxslt1-dev python-lxml supervisor git libssl-dev
+git clone https://github.com/binux/pyspider
+cd pyspider
+</code></pre><p>个人比较系统用 UTC +8 的时间，因此你可以使用下面的代码选择中国的时区，当然，你也可以不进行这个操作<pre><code>dpkg-reconfigure tzdata
+</code></pre><p>然后我们可以安装 pyspider 了<pre><code>pip install --allow-all-external -r requirements.txt
+python setup.py install
+</code></pre><h3>安装 MySQL 数据库</h3><p>我们需要使用 MySQL 数据库来存放我们的数据，因此我们就需要安装这个数据库了<pre><code>apt-get install -y mysql-server
+</code></pre><p>在安装的过程中会提示让您输入两次你的 root 密码，本例中使用 <code>pyspider-pass</code> 作为例子。<p>安装完后，我们需要新建数据库以及新建一个用户。考虑到今后可能会有集群的爬虫，因此新建的这个用户的主机名我们填写的是 <code>%</code><p>连接到数据库<pre><code>mysql -uroot -p
+</code></pre><p>新建数据库<pre><code>mysql&gt; create database taskdb;
+mysql&gt; create database projectdb;
+mysql&gt; create database resultdb;
+</code></pre><p>新建用户<pre><code>mysql&gt; CREATE USER 'pyspider'@'%';
+</code></pre><p>用户授权（当然，有些权限你是可以不给的。<pre><code>mysql&gt; GRANT SELECT, INSERT, UPDATE, REFERENCES, DELETE, CREATE, DROP, ALTER, INDEX, TRIGGER, CREATE VIEW, SHOW VIEW, EXECUTE, ALTER ROUTINE, CREATE ROUTINE, CREATE TEMPORARY TABLES, LOCK TABLES, EVENT ON `taskdb`.* TO 'pyspider'@'%';
+mysql&gt; GRANT SELECT, INSERT, UPDATE, REFERENCES, DELETE, CREATE, DROP, ALTER, INDEX, TRIGGER, CREATE VIEW, SHOW VIEW, EXECUTE, ALTER ROUTINE, CREATE ROUTINE, CREATE TEMPORARY TABLES, LOCK TABLES, EVENT ON `projectdb`.* TO 'pyspider'@'%';
+mysql&gt; GRANT SELECT, INSERT, UPDATE, REFERENCES, DELETE, CREATE, DROP, ALTER, INDEX, TRIGGER, CREATE VIEW, SHOW VIEW, EXECUTE, ALTER ROUTINE, CREATE ROUTINE, CREATE TEMPORARY TABLES, LOCK TABLES, EVENT ON `resultdb`.* TO 'pyspider'@'%';
+</code></pre><p>正如我们上面所说，我们可能会用到集群，因此我们将数据库的 <code>bind</code> 地址设置为 0.0.0.0。<p>编辑 <code>/etc/mysql/my.cnf</code> ，将 <code>bind-address</code> 修改为 <code>0.0.0.0</code><pre><code>bind-address            = 0.0.0.0
+</code></pre><p>然后重启数据库<pre><code>service mysql restart
+</code></pre><h3>安装 redis</h3><pre><code>apt-get install -y redis-server
+</code></pre><p>同时，处于集群的考虑，我们可能需要将 redis 暴露在外网。<p>编辑 <code>/etc/redis/redis.conf</code> ，设置 bind 参数<pre><code>bind 0.0.0.0
+</code></pre><p>然后重启 redis 队列<pre><code>service redis-server restart
+</code></pre><p>由于 redis 是全部人都可以访问的，因此我们要用 iptables 阻止未授权的访问<pre><code>iptables -A INPUT -s 127.0.0.1 -p tcp --dport 6379 -j ACCEPT
+iptables -A INPUT -p tcp --dport 6379 -j DROP
+</code></pre><h3>安装 PhantomJS</h3><p>这个方法是最快捷的方法，不过似乎&mldr;..所以只能用 Wheezy 版本的了<pre><code>wget -O phantomjs_1.9.6-0wheezy_amd64.deb https://github.com/suan/phantomjs-debian/blob/master/phantomjs_1.9.6-0wheezy_amd64.deb?raw=true
+dpkg -i phantomjs_1.9.6-0wheezy_amd64.deb
+</code></pre><h2>配置</h2><h3>配置 pyspider</h3><p>pyspider 的配置请各位看官参考：<a href=https://web.archive.org/web/20161212030128/http://docs.pyspider.org/en/latest/Command-Line/ rel=nofollow>Command Line</a><p>下面贴的是我的配置<pre><code class=language-json>{
+  &quot;taskdb&quot;: &quot;mysql+taskdb://pyspider:pyspider-pass@127.0.0.1:3306/taskdb&quot;,
+  &quot;projectdb&quot;: &quot;mysql+projectdb://pyspider:pyspider-pass@127.0.0.1:3306/projectdb&quot;,
+  &quot;resultdb&quot;: &quot;mysql+resultdb://pyspider:pyspider-pass@127.0.0.1:3306/resultdb&quot;,
+  &quot;message_queue&quot;: &quot;redis://127.0.0.1:6379/db&quot;,
+  &quot;phantomjs-proxy&quot;: &quot;127.0.0.1:25555&quot;,
+  &quot;scheduler&quot;: {
+    &quot;xmlrpc-host&quot;: &quot;0.0.0.0&quot;,
+    &quot;delete-time&quot;: 3600
+  },
+  &quot;webui&quot;: {
+    &quot;port&quot;: 5555,
+    &quot;username&quot;: &quot;imlonghao&quot;,
+    &quot;password&quot;: &quot;pyspider-pass&quot;,
+    &quot;need-auth&quot;: true
+  }
+}
+</code></pre><p>另外，我们将会使用 <code>supervisor</code> 来启动 pyspider ，为了避免安全问题的发生，我们将会为此特意新增一个用户，并将主目录设置为 <code>/pyspider</code><pre><code>useradd -md /pyspider pyspider
+</code></pre><p>上面的配置文件我将其放置在 <code>/pyspider/config.json</code> ，并设置了一下权限<pre><code>chown pyspider:pyspider config.json
+chmod 400 config.json
+</code></pre><h3>配置 supervisor</h3><p>编辑 <code>/etc/supervisor/conf.d/pyspider.conf</code> ，添加下面的内容<pre><code>[program:pyspider]
+command=/usr/local/bin/pyspider -c /pyspider/config.json
+autorestart=true
+user=pyspider
+group=pyspider
+directory=/pyspider
+stopasgroup=true
+</code></pre><p>保存后，通过下面的命令重启 supervisor<pre><code>supervisorctl reload
+</code></pre><h2>结束</h2><p>到此为止，pyspider 应该就运行在你的 ip:5555 上了</div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

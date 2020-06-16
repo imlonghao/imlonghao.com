@@ -1,0 +1,42 @@
+<!doctype html><html lang=zh-cn><title>TINC - 构建 IPv6 隧道及私有网络 - imlonghao</title><meta name=description content="Tinc VPN 是一个轻量型的 GNU 协议下的开源软件，通过隧道以及加密技术在互联网点与点之间创立隧道。VPN 是 IP 层面上的，所以可以像普通的网络设备那样，不需要去适配其他已经存在的软件"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./46.html>TINC - 构建 IPv6 隧道及私有网络</a></div></div><div class=clearfix></div><div id=title>TINC - 构建 IPv6 隧道及私有网络</div><div id=content class=markdown-body><p><img class=lazy data-src=https://www.tinc-vpn.org/images/tinclogo.png><h2>Tinc VPN 简介</h2><p>Tinc VPN 是一个轻量型的 GNU 协议下的开源软件，通过隧道以及加密技术在互联网点与点之间创立隧道。VPN 是 IP 层面上的，所以可以像普通的网络设备那样，不需要去适配其他已经存在的软件。所以他就可以很安全的在点与点之间传输数据，并不需要担心泄露。他还有其他几大的特点：<ul><li>加密 / 认证 / 压缩<li>自动全网状路由<li>易于扩展网络节点<li>能够进行网络的桥接<li>跨平台支持<li>IPv6 支持</ul><p>（上面的内容基本就是官网首页的一个简单的翻译，官方网站：<a href=https://www.tinc-vpn.org/ rel=nofollow>https://www.tinc-vpn.org/</a><h2>IPv6 隧道实例</h2><h3>需求及现有资源</h3><p>在学校内网中，由于学校网络暂未支持 IPv6 ，有时候想在外面访问回去自己的笔记本，因此想要将自己的笔记本或者将自己的路由器通过某种方法支持并接入到 IPv6 网络。<p>目前已有一台 ping 值较低的 VPS ，并且这台 VPS 通过 TunnelBroker 已经接入到 he.net 的 IPv6 网络中。<p>已有 IPv6 前缀：<code>2001:DB8:1::/48</code> （使用文档保留前缀 <a href=https://tools.ietf.org/html/rfc3849 rel=nofollow>RFC 3849</a> ）<p>Tinc 隧道中分配：<code>2001:DB8:1::/64</code> ，VPS 使用 <code>2001:DB8:1::1/64</code>，笔记本使用<code>2001:DB8:1::2/64</code>，并且划分<code>2001:DB8:1:2::/64</code>给我的笔记本或者路由器。<p>假定 VPS 的网络名叫（这个在配置中会用到）：<code>vps</code> ， 我笔记本的网络名叫： <code>laptop</code><h3>Tinc 配置</h3><h4>安装</h4><p>tinc 在各个发行版的仓库中都可以找到，例如 Debian / Ubuntu 系列的系统就可以通过下面的命令安装：<pre><code>apt-get install tinc
+</code></pre><p>其他系统也相对类似，平时怎么安装软件就怎么安装就对 了。<h4>目录结构</h4><pre><code>/etc/tinc
+└── vps
+    ├── hosts
+    │   ├── laptop
+    │   └── vps
+    ├── rsa_key.priv
+    ├── tinc.conf
+    ├── tinc-down
+    └── tinc-up
+</code></pre><ul><li><code>/etc/tinc/vps</code> 目录下的文件都属于 <code>vps</code> 这个网络<li><code>/etc/tinc/vps/hosts</code> 目录是存放其他用户或者说是其他网络的 public key 以及他们的 ip 地址<li><code>rsa_key.priv</code> 本网络的私钥<li><code>tinc.conf</code> 本网络的配置文件<li><code>tinc-down</code> 本网络关闭时执行的脚本<li><code>tinc-up</code> 本网络启动时执行的脚本</ul><h4>详细配置</h4><h5>服务器端</h5><p>服务器端使用的是 Debian 系统，因此为了能够使用 <code>systemctl</code> 进行管理以及自启动，添加本台服务器的网络名到 <code>/etc/tinc/nets.boot</code>。<pre><code>root@vps:/etc/tinc# cat nets.boot
+## This file contains all names of the networks to be started on system startup.
+vps
+</code></pre><p>配置文件 <code>tinc.conf</code> 相对也比较简单，我这里只设置了三个参数，更多的参数设置请参考 <a href=https://www.tinc-vpn.org/documentation-1.1/Main-configuration-variables.html#Main-configuration-variables rel=nofollow>Main configuration variables</a><p><code>Name</code> 是本台服务器的网络名；<code>Interface</code> 是隧道所使用的网卡（随便设置即可）；<code>Mode</code> 有三种模式，分别是 <code>router</code> / <code>switch</code> / <code>hub</code> ，相对应我们平时使用到的路由、交换机、集线器，同样使用 <code>switch</code> 即可<pre><code>root@vps:/etc/tinc/vps# cat tinc.conf
+Name = vps
+Interface = tinc
+Mode = switch
+</code></pre><p><code>tinc-up</code> 以及 <code>tinc-down</code> 类似，只不过一个是 <code>up</code> 一个是 <code>down</code> ，一个是 <code>add</code> 一个是 <code>del</code><p><code>$INTERFACE</code> 在 tinc 启动时会作为环境变量自动代入，这里不需要修改。<p>静态路由按照下面所示即可，这两个文件需要赋予可执行权限。<pre><code>root@vps:/etc/tinc/vps# cat tinc-up
+#!/bin/sh
+
+ip -6 link set $INTERFACE up
+ip -6 addr add 2001:DB8:1::1/64 dev $INTERFACE
+ip -6 route add 2001:DB8:1:2::/64 via 2001:DB8:1::2
+
+root@vps:/etc/tinc/vps# cat tinc-down
+#!/bin/sh
+
+ip -6 link set $INTERFACE down
+ip -6 route del 2001:DB8:1:2::/64 via 2001:DB8:1::2
+
+root@vps:/etc/tinc/vps# chmod +x tinc-*
+</code></pre><p>创建密钥执行如下命令即可<pre><code>root@vps:/etc/tinc/vps# tincd -n vps -K 4096
+</code></pre><h5>客户端</h5><p>客户端的配置基本相同，按照自己的设置进行配置即可。但还是需要注意几个地方<p><code>tinc.conf</code> 文件需要 <code>ConnectTo = vps</code> ，这样程序才会去主动连接<pre><code>root@laptop:/etc/tinc/laptop# cat tinc.conf
+Name = laptop
+Interface = tinc
+Mode = switch
+ConnectTo = vps
+</code></pre><p><code>tinc-up</code> 与 <code>tinc-down</code> 文件进行相应的调换即可。<p>一切妥当后同样执行密钥的生成。<h5>客户端服务器之间的连接</h5><p>在之前我们提到了 <code>/etc/tinc/vps/hosts</code> 这个文件夹，我们需要将公钥分配给对方。<p>VPS 上的 <code>/etc/tinc/vps/hosts/vps</code> 需要复制到 laptop 的相同位置，同时第一行需要加上下面这行，以明确客户端连接的对象。这里正如上面所说，VPS 有公网 IP ，laptop 在内网环境中。<pre><code>Address = 222.222.222.222
+</code></pre><p>而 laptop 上的 <code>/etc/tinc/vps/hosts/laptop</code> 同样需要复制到 vps 的相同位置，但这里就不需要加上 <code>Address =</code>了，因为客户端连接的 IP 并不确定，因此不需要设置，只需要公钥即可。<p>一切妥当后，启动 tinc 服务即可。<h2>使用分享</h2><p>经过了我的搭建之后，一切都按部就班地进行着。<p>抓包可以看出，我本地与服务器之间的连接已经数据传输是加密的，而如果你对数据的传输有兴趣的话，只需要将抓包的网卡设置成上面设置的网卡（tinc）即可，在 tinc 传输的数据已经是经过解密的了，因此抓包可以很好的复原传输的过程。<p>另外如果有你懂的需求的话，似乎 tinc 也是可以做到的。</div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

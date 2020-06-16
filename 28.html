@@ -1,0 +1,51 @@
+<!doctype html><html lang=zh-cn><title>「翻译」ngrok 1.X 配置文档 - imlonghao</title><meta name=description content="ngrok 的配置文件是完全可选的非常简单 YAML 格式文件，他可以允许你使用 ngrok 一些更高级的功能，例如："><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./28.html>「翻译」ngrok 1.X 配置文档</a></div></div><div class=clearfix></div><div id=title>「翻译」ngrok 1.X 配置文档</div><div id=content class=markdown-body><p>ngrok 的配置文件是完全可选的非常简单 YAML 格式文件，他可以允许你使用 ngrok 一些更高级的功能，例如：<ul><li>同时运行多个隧道<li>连接到自定义的 ngrok 服务器<li>调整 ngrok 一些很神秘的功能</ul><p>ngrok 的配置文件默认从 <code>~/.ngrok</code> 加载。你可以通过 <code>-config</code> 参数重写配置文件的地址<h2>同时运行多个隧道</h2><p>为了运行多个隧道，你需要在配置文件当中使用 <code>tunnels</code> 参数配置每个隧道。隧道的参数以字典的形式配置在配置文件当中。举个例子，让我们来定义三个不同的隧道。第一个隧道是一个有认证的只转发 https 的隧道。第二个隧道转发我们自己机器的 22 端口以便让我可以通过隧道连接到自己的电脑。最后，我们使用自己的域名创造了一个隧道，我们将要在黑客马拉松中展示这个。<pre><code>tunnels:
+  client:
+    auth: &quot;user:password&quot;
+    proto:
+      https: 8080
+  ssh:
+    proto:
+      tcp: 22
+  hacks.inconshreveable.com:
+    proto:
+      http: 9090
+</code></pre><p>通过 <code>ngrok start</code> 命令，我们可以同时运行三个隧道，后面要接上我们要启动的隧道名。<pre><code>ngrok start client ssh hacks.inconshreveable.com
+</code></pre><p>终端现在看上去应该是这样的：<pre><code>ngrok
+
+Tunnel Status                 online
+Version                       1.3/1.3
+Forwarding                    https://client.ngrok.com -&gt; 127.0.0.1:8080
+Forwarding                    http://hacks.inconshreveable.com -&gt; 127.0.0.1:9090
+Forwarding                    tcp://ngrok.com:44764 -&gt; 127.0.0.1:22
+...
+</code></pre><h2>隧道设置</h2><p>每一个隧道都可以设置以下五个参数：<code>proto</code>，<code>subdomain</code>，<code>auth</code>，<code>hostname</code> 以及 <code>remote_port</code>。每一个隧道都必须定义 <code>proto</code> ，因为这定义了协议的类型以及转发的目标。当你在运行 http/https 隧道时， <code>auth</code> 参数是可选的，同样， <code>remote_port</code> 也是可选的，他声明了某个端口将要作为远程服务器转发的端口，请注意这只适用于 TCP 隧道。 ngrok 使用每个隧道的名字做到子域名或者域名，但你可以重写他：<pre><code>tunnels:
+  client:
+    subdomain: &quot;example&quot;
+    auth: &quot;user:password&quot;
+    proto:
+      https: 8080
+</code></pre><p>现在当你运行 <code>ngrok start client</code> 的时候，他将会有这样的效果：<code>example.ngrok.com -> 127.0.0.1:8080</code>。相似的，这对自定义域名同样适用，他可以让你通过别名的方式是隧道名更短。<pre><code>tunnels:
+  hacks:
+    hostname: &quot;hacks.inconshreveable.com&quot;
+    proto:
+      http: 9090
+</code></pre><p>对于 TCP 隧道，你可以会通过 <code>remote_port</code> 参数来指定一个远程服务器的端口作为映射。如果没有声明，服务器将会给你随机分配一个端口。<pre><code>tunnels:
+  ssh:
+    remote_port: 60123
+    proto:
+      tcp: 22
+</code></pre><h2>其他设置选项</h2><p>通过在配置文件的顶级配置中声明其他可选的选项，ngrok 的配置文件还可以让你做一些更有趣的事情。举个例子，当你在与 ngrok.com 服务器交互的时候可能需要声明 <code>auth_token</code> 。当你需要改变 ngrok 自带的 web 调试工具所绑定的端口是，你可能需要声明 <code>inspect_addr</code> 。<pre><code>auth_token: abc123
+inspect_addr: &quot;0.0.0.0:8888&quot;
+tunnels:
+  ...
+</code></pre><h2>连接到自定义的 ngrok 服务器</h2><p>ngrok 支持连接到其他的 ngrokd 服务器上，即便他们并不托管在 ngrok.com 上。首先，显然你必须正确的配置好你的 ngrokd 服务器。如何配置你自己的 ngrokd 服务器请看这里：<a href=https://github.com/inconshreveable/ngrok/blob/master/docs/SELFHOSTING.md rel=nofollow>运行你自己的 ngrokd 服务器</a>。当你运行了你自己的 ngrokd 服务器，你需要设置两个参数来让 ngrok 安全的连接到你的服务器。首先，你需要设置 <code>server_addr</code> 来支出你服务器的地址。然后你需要设置 <code>trust_host_root_certs</code> 来确保你的 TLS 连接安全。<pre><code>server_addr: &quot;example.com:4443&quot;
+trust_host_root_certs: true
+tunnels:
+  ...
+</code></pre><h2>在 http 代理下运行</h2><p>最后，你可以设置 ngrok 在 http 代理下运行，这有时候是很有必要的如果你在一个高度限制的企业网络中时。 ngrok 遵守标准的 Unix 环境变量 <code>http_proxy</code>， 但你也可以通过在配置文件中声明 <code>http_proxy</code> 参数来指定。<pre><code>http_proxy: &quot;http://user:password@10.0.0.1:3128&quot;
+tunnels:
+  ...
+</code></pre><hr><p>本文是对 <code>https://ngrok.com/docs/1</code> 的一篇翻译，另因本人水平有限，翻译过程中难免会有错误，敬请指出！若有任何版权问题，也敬请指出！<p>This page is a translation for <code>https://ngrok.com/docs/1</code>. I am not good in translation, maybe this page will has some mistakes, I am happy to see that. Please let me know if this page has any copyright problem.</div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

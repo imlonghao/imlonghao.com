@@ -1,0 +1,84 @@
+<!doctype html><html lang=zh-cn><title>Fish Shell 精简手册 - imlonghao</title><meta name=description content="Fish —— 一个友好的交互式终端"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./52.html>Fish Shell 精简手册</a></div></div><div class=clearfix></div><div id=title>Fish Shell 精简手册</div><div id=content class=markdown-body><h1>Fish Shell 精简手册</h1><p>Fish —— 一个友好的交互式终端<h2>引号</h2><p>单引号 <code>'</code> 中的变量不会被解析<p>双引号 <code>"</code> 中的变量会被解析<pre><code>&gt; set a 1
+&gt; echo $a
+1
+&gt; echo '$a'
+$a
+&gt; echo &quot;$a&quot;
+1
+</code></pre><h2>输入输出重定向</h2><p>和大多数的程序一样，<code>0</code> 代表标准输入，<code>1</code> 代表标准输出，<code>2</code> 代表标准错误<ul><li><code>&lt;SOURCE_FILE</code> 从一个文件中读取输出<li><code>>DESTINATION</code> 将输出写入到一个文件<li><code>^DESTINATION</code> 将错误写入到一个文件<li><code>>>DESTINATION_FILE</code> 将输出追加写入到一个文件<li><code>^^DESTINATION_FILE</code> 将错误追加写入到一个文件<li><code>>?DESTINATION</code> 如果文件存在则不写入输出<li><code>^?DESTINATION</code> 如果文件存在则不写入错误</ul><p><code>DESTINATION</code> 可以为：<ul><li>一个文件<li><code>&文件描述符标号</code>，将会写入到该文件描述符<li><code>&-</code>，将关闭这个文件描述符</ul><h2>管道</h2><p>标准形式：<code>cat foo.txt | head</code><p>只捕获错误：<code>make fish 2>| less</code><h2>函数</h2><h3>标准形式</h3><pre><code>function ll
+    ls -l $argv
+end
+</code></pre><h3>定义别名</h3><p>使用一个函数重新定义一个已经存在的命令<pre><code>function ls
+    command ls --color=auto $argv
+end
+</code></pre><h2>通配符</h2><ul><li><code>？</code> 匹配任意一个字符，不包括 <code>/</code><li><code>*</code> 匹配任意字符，不包括 <code>/</code>，同时也匹配空字符串<li><code>**</code> 匹配任意字符，包括 <code>/</code>，即会递归到子目录中，同时也匹配空字符串</ul><h2>命令替换</h2><p>一个命令的输出作为另外一个命令的参数，将命令放在 <code>()</code> 中<p>如果输出超过一行，每一行都将作为一个参数<p>将 <code>IFS</code> 设置为空可以取消行分割<pre><code>echo (basename image.jpg .jpg).png
+# 输出 'image.png'
+
+begin; set -l IFS; set data (cat data.txt); end
+# 将 `data` 这个变量用 `data.txt` 里面的内容赋值
+# 并且不将内容分割进数组
+</code></pre><h2>括号拓展</h2><p>将花括号 <code>{}</code> 中以逗号分割的字符列表进行拓展，使每个元素都成为新的参数<pre><code>echo input.{c,h,txt}
+# 输出 'input.c input.h input.txt'
+
+mv *.{c,h} src/
+# 将所有以 `.c` `.h` 为后缀的文件移动到 `src/` 目录中
+</code></pre><h2>变量</h2><h3>变量的声明</h3><p>变量名不能为空，并且只能为字母、数字和下划线<p>对于变量名的开头和结尾并没有太多的要求，可以以数字和下划线开头<p>变量的声明是通过 <code>set</code> 命令来进行的<pre><code>set [SCOPE_OPTIONS]
+set [OPTIONS] VARIABLE_NAME VALUES...
+set [OPTIONS] VARIABLE_NAME[INDICES]... VALUES...
+set ( -q | --query ) [SCOPE_OPTIONS] VARIABLE_NAMES...
+set ( -e | --erase ) [SCOPE_OPTIONS] VARIABLE_NAME
+set ( -e | --erase ) [SCOPE_OPTIONS] VARIABLE_NAME[INDICES]...
+set ( -S | --show ) [SCOPE_OPTIONS] [VARIABLE_NAME]...
+</code></pre><p>可选参数<p><code>-l / --local</code> 局部变量，仅在当前作用域中有效<p><code>-g / --global</code> （默认），全局变量，在本次运行环境中有效<p><code>-U / --universal</code> 通用变量，当前用户下全部有效，并且具有持久性<p><code>-x / --export</code> 该变量可以传递给子进程<p><code>-u / --unexport</code> （默认），该变量不可以传递给子进程<p><code>-e / --erase</code> 清除一个变量<p><code>-q / --query</code> 测试一个变量是否已经被定义，如果是，程序返回值为 0，如果不是，程序返回值为 1<p><code>-n / --names</code> 列出所有变量的变量名，不包含其值<p><code>-S / --show</code> 查询某个变量的详细信息，例如是否是局部变量等<p><code>-L / --long</code> 打印变量时不截断比较长的行<h3>特殊变量</h3><table><thead><tr><th>Variable<th>Description<tbody><tr><td><code>$HOME</code> / <code>~</code><td>当前用户的主目录<tr><td><code>$PATH</code><td>当前的目录列表<tr><td><code>$PWD</code><td>当前的工作目录<tr><td><code>$USER</code><td>当前的用户名<tr><td><code>$_</code><td>当前的文件名</table><p>更多的可以参考：<a href=https://fishshell.com/docs/current/index.html#variables-special rel=nofollow>Special variables - Fish</a><h3>位置参数</h3><p>位置参数指传入到脚本或函数中的参数，在 Bash 中是<code>$1</code>和<code>$2</code>等<p>在 Fish 中可以使用 <code>$argv</code> 来取得传入的参数<table><thead><tr><th>Parameter<th>Description<tbody><tr><td>\$argv<td>返回全部传入的参数<tr><td>\$argv[1]<td>返回第一个传入的参数<tr><td>\$argv[2..5]<td>返回第二到第五个传入的参数</table><h3>变量的使用</h3><ul><li><code>$foo</code><li><code>{$foo}</code></ul><p>此外 Fish 还支持变量的多重引用<pre><code>&gt; set foo bar
+&gt; set bar 1
+&gt; echo $foo
+bar
+&gt; echo $$foo
+1
+</code></pre><h2>列表索引</h2><pre><code>&gt; echo (seq 10)[2..5]
+2 3 4 5
+
+&gt; echo (seq 10)[2..5 1..3]
+2 3 4 5 1 2 3
+
+&gt; echo (seq 10)[-1..1]
+10 9 8 7 6 5 4 3 2 1
+
+&gt; echo (seq 10)[-3..-1]
+8 9 10
+</code></pre><h2>返回值</h2><p>获取程序的运行结果可以采用 <code>$status</code> 来获得<p>正常程序返回 <code>0</code>，异常的话返回的是一个非零的结果<h2>注释</h2><p><code>#</code><p>从 <code>#</code> 到本行的结尾会被当成注释忽略掉<h2>数组</h2><p>定义：<code>set foo bar1 bar2 bar3</code><p>相当与 Python 里面的：<code>foo = ['bar1', 'bar2', 'bar3']</code><p>可以通过 <code>set foo[2] barbar2</code> 修改数组中的第二个参数为 <code>barbar2</code><p>（注意是从 1 开始算的）<h2>命令序列</h2><h3><code>;</code></h3><p>每个以 <code>;</code> 分割开的命令都会按顺序运行，无论是否发生错误（即返回非 0 的返回值）<h3><code>; and</code></h3><p>类似与 Bash 中的 <code>&&</code><p>每个以 <code>;</code> 分割开的命令都会按顺序运行，<code>and</code>则限定了只有当前面最后的返回值为 0 时才运行<h3><code>; or</code></h3><p>类似与 Bash 中的 <code>||</code><p>每个以 <code>;</code> 分割开的命令都会按顺序运行，<code>or</code>则限定了只有当前面最后的返回值为非 0 时才运行<h2>条件语句</h2><h3><code>if</code></h3><pre><code>if grep fish /etc/shells
+    echo Found fish
+else if grep bash /etc/shells
+    echo Found bash
+else
+    echo Got nothing
+end
+</code></pre><h3><code>switch</code></h3><pre><code>switch (uname)
+case Linux
+    echo Hi Tux!
+case Darwin
+    echo Hi Hexley!
+case FreeBSD NetBSD DragonFly
+    echo Hi Beastie!
+case '*'
+    echo Hi, stranger!
+end
+</code></pre><h2>循环</h2><p>Fish 只支持 while 和 for 循环<h3><code>while</code></h3><pre><code>&gt; while true
+    echo &quot;Loop forever&quot;
+end
+Loop forever
+Loop forever
+Loop forever
+...
+</code></pre><h3><code>for</code></h3><pre><code>&gt; for x in (seq 5)
+    echo $x
+end
+1
+2
+3
+4
+5
+</code></pre><h3>循环控制</h3><ul><li><code>break</code> 跳出当前循环<li><code>continue</code> 跳过当前循环未执行的部分，直接进行下一次循环</ul><h2>参考文章</h2><p><a href=https://fishshell.com/docs/current/index.html rel=nofollow>官方文档</a><p><a href=https://fishshell.com/docs/current/tutorial.html rel=nofollow>官方教程</a><p><a href=https://fishshell.com/docs/current/commands.html rel=nofollow>内置命令/函数/功能表</a><p><a href=https://github.com/denysdovhan/bash-handbook/blob/master/translations/zh-CN/README.md rel=nofollow>bash-handbook-zh-CN</a></div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

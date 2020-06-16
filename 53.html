@@ -1,0 +1,117 @@
+<!doctype html><html lang=zh-cn><title>T-Pot 蜜罐的介绍及使用 - imlonghao</title><meta name=description content="T-Pot 蜜罐是德国电信下的一个社区蜜罐项目，是一个基于 Docker 容器的集成了众多针对不同应用蜜罐程序的系统，目前发行的最高版本是 2017 年 11 月 7 日发布的 T-Pot 17.10，根据官方的介绍，每年都会发布一个新的版本。"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./53.html>T-Pot 蜜罐的介绍及使用</a></div></div><div class=clearfix></div><div id=title>T-Pot 蜜罐的介绍及使用</div><div id=content class=markdown-body><h2>简介</h2><p>T-Pot 蜜罐是德国电信下的一个社区蜜罐项目，是一个基于 Docker 容器的集成了众多针对不同应用蜜罐程序的系统，目前发行的最高版本是 2017 年 11 月 7 日发布的 T-Pot 17.10，根据官方的介绍，每年都会发布一个新的版本。<p>项目地址：<a href=https://github.com/dtag-dev-sec/tpotce rel=nofollow>https://github.com/dtag-dev-sec/tpotce</a><h2>组成</h2><p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/ef6gMA8ZSxpDzRn.png><p>上图就是当前 T-Pot 最新版本的组成部分，T-Pot 可以理解成是这么多系统的一个整合。<p>下面将针对各个部分进行简单的介绍<h3>Elastic-Search</h3><ul><li>项目地址：<a href=https://www.elastic.co/products/elasticsearch rel=nofollow>https://www.elastic.co/products/elasticsearch</a><li>监听端口：64298（本地，可以通过 64297 端口的 web 服务使用）</ul><p>Elastic Search 一个性能十分强大的全文搜索引擎，他可以快速的进行海量数据的查询<p>在 T-Pot 的实际应用中，各个蜜罐所产生的日志都会导入到 Elastic Search 中，因此可以使用 Elastic Search 来进行检索，同时也可以使用他对数据进行各种复杂条件的查询和导出等<h3>Logstash</h3><ul><li>项目地址：<a href=https://www.elastic.co/products/logstash rel=nofollow>https://www.elastic.co/products/logstash</a><li>监听地址：N/A</ul><p>Logstash 用于接收从蜜罐传递过来的日志，然后对数据进行过滤和格式化后交由 Elastic Search 进行存储和建立索引<h3>Kibana</h3><ul><li>项目地址：<a href=https://www.elastic.co/products/kibana rel=nofollow>https://www.elastic.co/products/kibana</a><li>监听端口：64296（本地，可以通过 64297 端口的 web 服务使用）</ul><p>Kibana 用于对进行数据的可视化查询，支持以柱状图、线状图、饼图、旭日图等等输出各种图形，也能通过时间序列对蜜罐日志某个特征的趋势进行分析。<h3>Head</h3><ul><li>项目地址：<a href=https://mobz.github.io/elasticsearch-head/ rel=nofollow>https://mobz.github.io/elasticsearch-head/</a><li>监听端口：64302（本地，可以通过 64297 端口的 web 服务使用）</ul><p>Head 是一个网页前端，主要用于与 Elastic Search 集群进行交互。<p>和上面的 Kibana 不同的是，他的可视化程度相对较低，但是更便于直接对数据进行操作，类似与 phpMyAdmin 的存在<h3>Conpot</h3><ul><li>项目地址：<a href=http://conpot.org/ rel=nofollow>http://conpot.org/</a><li>监听端口：1025 50100</ul><p>Conpot 是一个低交互式的工业控制系统的蜜罐，内置了一系列常见的工业控制协议，并且易于修改和拓展，尽其所能的欺骗攻击者，以获得攻击者的最终目的<h3>Cowrie</h3><ul><li>项目地址：<a href=http://www.micheloosterhof.com/cowrie/ rel=nofollow>http://www.micheloosterhof.com/cowrie/</a><li>监听端口：2222 2223</ul><p>Cowrie 是一个中等交互式的 SSH / Telnet 蜜罐，设计上用来记录暴力破解以及登录后 Shell 执行的操作<p>主要功能有：<ul><li>提供了虚假的文件系统（类似 Debian5.0），并且可以进行文件的增加和删除<li>随机增加某些文件的内容以便攻击者使用 <code>cat</code> 功能，例如 <code>/etc/passwd</code><li>提供 UML 兼容格式的回话日志，可供用来重放会话<li>保存通过 wget 和 curl 下载的文件供后续的分析</ul><h3>Dionaea</h3><ul><li>项目地址：<a href=https://github.com/DinoTools/dionaea rel=nofollow>https://github.com/DinoTools/dionaea</a><li>监听端口：21 42 69/udp 8081 135 443 445 1433 1723 1883 1900/udp 3306 5060/udp 5061/udp</ul><p>Dionaea 是一系列基于 Python 语言开发、libemu 作为 Shellcode 分析的蜜罐系统，支持多种不同协议，见下表<ul><li>blackhole<li>epmap<li>ftp<li>http<li>memcache<li>mirror<li>mqtt<li>mssql<li>mysql<li>pptp<li>sip<li>smb<li>tftp<li>upnp</ul><h3>ElasticPot</h3><ul><li>项目地址：<a href=https://github.com/schmalle/ElasticpotPY rel=nofollow>https://github.com/schmalle/ElasticpotPY</a><li>监听端口：9200</ul><p>ElasticPot 是一个 Elasticsearch 的蜜罐<h3>eMobility</h3><ul><li>项目地址：<a href=https://github.com/dtag-dev-sec/emobility rel=nofollow>https://github.com/dtag-dev-sec/emobility</a><li>监听端口：8080</ul><p>eMobility 是一个高交互式的蜜罐，针对的是下一代的交通基础设施（充电桩系统），用于收集攻击者的动机和方法。<p>系统主要包括中央充电系统、充电点以及模拟的用户交易。<h3>Glastopf</h3><ul><li>项目地址：<a href=https://github.com/mushorg/glastopf rel=nofollow>https://github.com/mushorg/glastopf</a><li>监听端口：80</ul><p>Glastopf 是一个 Python 语言开发的 Web 蜜罐，能提供各种基于漏洞类型的模拟<h3>HoneyTrap</h3><ul><li>项目地址：<a href=https://github.com/armedpot/honeytrap rel=nofollow>https://github.com/armedpot/honeytrap</a><li>监听端口：NFQUEUE</ul><p>HoneyTrap 是一个低交互式的蜜罐，通过监听 NFQUEUE 用户态数据包，相当与就监听了所有其他未监听的端口<p>主要功能用于观察攻击者的行为，同时也可以解析攻击的字符串，并且进行相应的下载保存<h3>Mailoney</h3><ul><li>项目地址：<a href=https://github.com/awhitehatter/mailoney rel=nofollow>https://github.com/awhitehatter/mailoney</a><li>监听端口：25</ul><p>Mailoney 是一个 SMTP 蜜罐<h3>Rdpy</h3><ul><li>项目地址：<a href=https://github.com/citronneur/rdpy rel=nofollow>https://github.com/citronneur/rdpy</a><li>监听端口：3389</ul><p>Rdpy 是一个用 Python 实现的 RDP 和 VNC 协议，可以用作服务端以及客户端，同时也提供 RDP 的蜜罐，用于记录 RDP 的过程<h3>vnclowpot</h3><ul><li>项目地址：<a href=https://github.com/magisterquis/vnclowpot rel=nofollow>https://github.com/magisterquis/vnclowpot</a><li>监听端口：5900</ul><p>vnclowpot 是一个低交互式的 VNC 蜜罐，主要用于记录 VNC 的认证过程<h3>Suricata</h3><ul><li>项目地址：<a href=https://github.com/OISF/suricata rel=nofollow>https://github.com/OISF/suricata</a></ul><p>Suricata 是一个网络 IDS、IPS 和 NSM 引擎，主要分析并记录下连接中一些有用的信息<h3>p0f</h3><ul><li>项目地址：<a href=http://lcamtuf.coredump.cx/p0f3/ rel=nofollow>http://lcamtuf.coredump.cx/p0f3/</a></ul><p>p0f 利用一系列复杂的流量指纹识别，被动的来识别 TCP/IP 通信的对方信息，例如可以识别出对方的系统、在线时间等<h2>安装</h2><h3>镜像安装</h3><p><a href=https://github.com/dtag-dev-sec/tpotce/releases/download/17.10/tpot.iso rel=nofollow>https://github.com/dtag-dev-sec/tpotce/releases/download/17.10/tpot.iso</a><h3>在已有系统下安装</h3><p>目前支持在全新的 Ubuntu 16.04 (64bit) 系统下进行安装<p><a href=https://github.com/dtag-dev-sec/t-pot-autoinstall rel=nofollow>https://github.com/dtag-dev-sec/t-pot-autoinstall</a><h2>界面</h2><p>t-pot 的界面大概就是 Kibana、ES Head 等等组件的 Web 界面<p>下面将展示 Kibana 中最近 7 天（2018-08-15 至 2018-08-22）的蜜罐情况供参考<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/4nR6CKZDfViGadL.png><p style=text-align:center>(攻击地图)<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/3yecWaFbf5kQIEi.png><p style=text-align:center>(攻击总量与走势)<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/D94lkjB1hIE8vpH.png><p style=text-align:center>(攻击区域分布)<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/GdIzTHqWyJO6aY5.png><p style=text-align:center>(SSH 蜜罐记录的用户名和密码)<h2>日志</h2><p>基本上各个蜜罐的日志均导入到了 Elasticsearch 中，因此我们可以很快的在庞大的日志中找到我们想要的日志。但由于 Elasticsearch 的语法我不是十分熟悉，因此下面将记录几个常用的结构来以备今后的使用<p>使用位置： <code>ES Head -> 复合查询</code><h3>查询来自某个 IP 的日志</h3><pre><code class=language-json>{
+  &quot;query&quot;: {
+    &quot;bool&quot;: {
+      &quot;must&quot;: [
+        {
+          &quot;term&quot;: {
+            &quot;src_ip.keyword&quot;: &quot;127.6.6.6&quot;
+          }
+        }
+      ]
+    }
+  },
+  &quot;from&quot;: 0,
+  &quot;size&quot;: 50
+}
+</code></pre><h3>查询来自某个 IP 的日志并按日期倒序排列</h3><pre><code class=language-json>{
+  &quot;query&quot;: {
+    &quot;bool&quot;: {
+      &quot;must&quot;: [
+        {
+          &quot;term&quot;: {
+            &quot;src_ip.keyword&quot;: &quot;127.6.6.6&quot;
+          }
+        }
+      ]
+    }
+  },
+  &quot;from&quot;: 0,
+  &quot;size&quot;: 50,
+  &quot;sort&quot;: [
+    {
+      &quot;@timestamp&quot;: &quot;desc&quot;
+    }
+  ]
+}
+</code></pre><h3>列出来自 Cowrie 蜜罐的、使用次数最多的用户名</h3><pre><code class=language-json>{
+  &quot;query&quot;: {
+    &quot;bool&quot;: {
+      &quot;must&quot;: [
+        {
+          &quot;term&quot;: {
+            &quot;type.keyword&quot;: &quot;Cowrie&quot;
+          }
+        }
+      ]
+    }
+  },
+  &quot;aggs&quot;: {
+    &quot;genres&quot;: {
+      &quot;terms&quot;: {
+        &quot;field&quot;: &quot;username.keyword&quot;,
+        &quot;size&quot;: 10
+      }
+    }
+  },
+  &quot;size&quot;: 0
+}
+</code></pre><p>这里只列出 <code>2018.08.21</code> 的结果<pre><code>root - 19660
+admin - 7267
+空 - 2626
+enable - 876
+shell - 870
+user - 596
+Administrator - 571
+super - 515
+superuser - 514
+tech - 375
+</code></pre><p>我就顺便把密码前 20 列出来了，改一下查询参数就可以的了<pre><code>空 - 5255
+1234 - 1024
+system - 876
+admin - 862
+sh - 846
+password - 833
+123456 - 802
+12345 - 623
+ibmdb2 - 514
+user - 434
+pass - 421
+1111 - 415
+7ujMko0admin - 414
+666666 - 413
+888888 - 412
+54321 - 410
+changeme - 384
+cat1029 - 380
+alpine - 377
+manager - 363
+</code></pre><h3>列出来自 Suricata 且端口为 80 且 User-Agent 以 python-request 开头的日志</h3><pre><code class=language-json>{
+  &quot;query&quot;: {
+    &quot;bool&quot;: {
+      &quot;must&quot;: [
+        {
+          &quot;term&quot;: {
+            &quot;type.keyword&quot;: &quot;Suricata&quot;
+          }
+        },
+        {
+          &quot;term&quot;: {
+            &quot;dest_port&quot;: &quot;80&quot;
+          }
+        },
+        {
+          &quot;wildcard&quot;: {
+            &quot;http.http_user_agent.keyword&quot;: &quot;python-request*&quot;
+          }
+        }
+      ],
+      &quot;must_not&quot;: [],
+      &quot;should&quot;: []
+    }
+  },
+  &quot;size&quot;: 50
+}
+</code></pre><h2>参考链接</h2><p><a href=https://github.com/dtag-dev-sec/tpotce rel=nofollow>dtag-dev-sec/tpotce: T-Pot Universal Installer and T-Pot ISO Creator</a><p><a href=https://github.com/dtag-dev-sec/t-pot-autoinstall rel=nofollow>dtag-dev-sec/t-pot-autoinstall: Autoinstall T-Pot on Ubuntu 16.04</a><p><a href=https://dtag-dev-sec.github.io/mediator/feature/2017/11/07/t-pot-17.10.html rel=nofollow>T-Pot 17.10 - Multi-Honeypot Platform rEvolution</a><p><a href=http://www.freebuf.com/sectool/178998.html rel=nofollow>基于 Docker 的蜜罐平台搭建：T-Pot 17.10 - FreeBuf 互联网安全新媒体平台 | 关注黑客与极客</a></div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

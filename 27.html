@@ -1,0 +1,32 @@
+<!doctype html><html lang=zh-cn><title>「翻译」ngrok 1.X 使用文档 - imlonghao</title><meta name=description content="ngrok 能让你映射一个正在本地运行的 web 服务到互联网上。只要告诉 ngrok 哪一个端口是你的 web 服务运行的即可"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./27.html>「翻译」ngrok 1.X 使用文档</a></div></div><div class=clearfix></div><div id=title>「翻译」ngrok 1.X 使用文档</div><div id=content class=markdown-body><h2>映射一个本地 web 服务器到互联网</h2><p>ngrok 能让你映射一个正在本地运行的 web 服务到互联网上。只要告诉 ngrok 哪一个端口是你的 web 服务运行的即可。让我们试一试开放本地的 80 端口到互联网上。<p><strong>例子：开放本地的 80 端口到互联网</strong><pre><code>$ ngrok 80
+</code></pre><pre><code>ngrok
+
+Tunnel Status                 online
+Version                       1.3/1.3
+Forwarding                    http://3a4bfceb.ngrok.com -&gt; 127.0.0.1:80
+Forwarding                    https://3a4bfceb.ngrok.com -&gt; 127.0.0.1:80
+Web Interface                 http://127.0.0.1:4040
+# Conn                        0
+Avg Conn Time                 0.00ms
+</code></pre><p>当你运行 ngrok 的时候，他会把当前的隧道状态通过一个界面显示在你的终端上。这其中包括了分配给你用来公共访问的地址，这个地址的访问请求会转发到你的 web 服务中：<a href=https://3a4bfceb.ngrok.com rel=nofollow>https://3a4bfceb.ngrok.com</a><h2>检查你的流量</h2><p>ngrok 会捕获所有那些经过他的 HTTP 流量，并提供了一个实时的 web UI ，在这里你可以详细地检查那些请求。启动 ngrok 后，访问 <a href=http://localhost:4040 rel=nofollow>http://localhost:4040</a> 。请求你的隧道，你应该会看到 web UI 上这个请求的详细更新，包括了时间、持续时间、headers 头、请求的参数以及原始字节。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/nbFHtKLelR95C8h.png><p>ngrok 的 web 接口允许你详细地检查 HTTP 请求以及=回复<h2>XML/JSON 语法检查</h2><p>ngrok 对绝大多数使用在 web 中的数据交换格式有特别的支持。一切 XML 以及 JSON 格式的数据都会自动被美化输出来让你检查语法错误。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/IrFmbATUO1sZqeL.png><p>ngrok 高亮了 JSON 语法错误的位置<h2>重放请求</h2><p>ngrok 允许你重放任何已经流经该隧道的 http 请求，点击 web UI 中每个请求最上面的 Replay 按钮，ngrok 将重放这个请求到你的服务器上。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/LosNcnB8mXzEV1h.png><p>通过简单的单击重放任何的请求<h2>密码保护你的隧道</h2><p>默认地，ngrok 隧道并不需要任何的用户名或者密码就可以访问。这就意味着任何人只要知道了或者猜到了你隧道的 URL 地址就可以对他发出请求。通过在建立隧道的过程中设置 -httpauth 选项，你可以通过用户名和密码加密你的隧道。这将对所有流入的请求强制使用 HTTP 基本身份验证，只有拥有在命令行中设置的密码的人才可以进行访问。<p>例子：为你的隧道添加用户名和密码<pre><code>$ ngrok -httpauth=&quot;helmet:12345&quot; 80
+</code></pre><pre><code>$ curl -u &quot;helmet:12345&quot; https://3a4bfceb.ngrok.com
+</code></pre><h2>使用指定的隧道子域名</h2><p>ngrok 会随机分配一个十六进制子域名（如：<a href=https://3a4bfceb.ngrok.com rel=nofollow>https://3a4bfceb.ngrok.com</a> ）给你的隧道。对于只用一次的、个人用的隧道，使用随机的子域名是可以的。然而，如果你打算使用这个 URL 在公共活动上，例如黑客马拉松之类的，或者你设置这个 URL 作为 webhook 来对接第三方的应用，如果这个 tunnel 的域名每次都会更改并且难以阅读的话，这是令人沮丧的。通过 <code>-subdomain</code> 选项，ngrok 允许你使用指定的子域名来启动一个隧道。让我们来用 example 作为子域名启动一个隧道。<p>例子：使用指定的子域名来启动一个隧道， &lsquo;example&rsquo;<pre><code>$ ngrok -subdomain=example 80
+</code></pre><pre><code>ngrok
+
+...
+Forwarding                    https://example.ngrok.com -&gt; 127.0.0.1:80
+...
+</code></pre><h2>转发一个非 HTTP 服务</h2><p>你是否在开发一个服务运行在 IRC, SMTP, SIP, POP3, XML-RPC 或者其他自定义的网络协议（非 HTTP）？通过 TCP 模式， ngrok 依然可以映射这些服务到互联网上！当你通过 TCP 模式运行 ngrok ，他会分配一个 ngrok.com 的端口给你，并且转发所有的流量到你的本地服务。不幸的是，当你运行在 TCP 模式下时， ngrok 并不知道如何去理解并且分析这些流量，因此，他的诊断和调试工具就会变得很原始。<p>例子：转发流量给本地的 TCP 服务<pre><code>$ ngrok -proto=tcp 22
+</code></pre><pre><code>ngrok
+
+...
+Forwarding                    tcp://ngrok.com:50612 -&gt; 127.0.0.1:22
+...
+</code></pre><h2>转发非本地服务</h2><p>ngrok 也可以用来转发流量到 NAT 或者防火墙后的服务，甚至这些服务并不运行在同一台机器上。转发流量到另外的机器非常简单，只需要加上他们的 IP 地址和端口就好了。<p>例子：转发流量给内网其他机器的服务<pre><code>$ ngrok 192.168.0.1:80
+</code></pre><h2>自定义域名</h2><p>ngrok 有 <code>-hostname</code> 选项，它将会允许你转发流量从你自己的域名，而且你并不需要运行你自己的 ngrok 服务器。举个例子，如果你想要用 <code>dev.example.com</code> 作为域名创建一个隧道，你必须：<p>在 ngrok.com 的控制面板输入你的域名作为反向域名，这确保了其他人不会用他们的隧道挟持进你的域名。
+在 DNS 系统为 <code>dev.example.com</code> 新建一个指向 <code>ngrok.com</code> 的 CNAME 记录，无论你在用哪家的 DNS 都是需要这样操作的。
+使用 <code>-hostname</code> 作为参数调用 ngrok ，像这样：<pre><code>$ ngrok -hostname dev.example.com 80
+</code></pre><p>需要注意的是，如果你使用了 <code>-hostname</code> 选项，你依然可以通过 SSL 来访问你的隧道，但是证书将会被浏览器提示不匹配。<hr><p>本文是对 <code>https://ngrok.com/docs/1</code> 的一篇翻译，另因本人水平有限，翻译过程中难免会有错误，敬请指出！若有任何版权问题，也敬请指出！<p>This page is a translation for <code>https://ngrok.com/docs/1</code>. I am not good in translation, maybe this page will has some mistakes, I am happy to see that. Please let me know if this page has any copyright problem.</div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

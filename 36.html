@@ -1,0 +1,27 @@
+<!doctype html><html lang=zh-cn><title>通过 Nginx 使用 Google Analytics 服务 - imlonghao</title><meta name=description content="一直以来，我的博客都是使用 Google Analytics 来统计网站的访问人数"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./36.html>通过 Nginx 使用 Google Analytics 服务</a></div></div><div class=clearfix></div><div id=title>通过 Nginx 使用 Google Analytics 服务</div><div id=content class=markdown-body><h2>背景</h2><p>一直以来，我的博客都是使用 Google Analytics 来统计网站的访问人数。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/szhUtnNqKBcgPvx.jpg><p>虽然每天的访问量都是几十，但是还是瞎折腾，博客写给自己看的哈哈。<p>之前为了提供加载速度，把 <code>analytics.js</code> ，然后调用本地的 js 文件，试图通过这样来加快网站的载入速度。但是这样做也有一定的局限性，万一谷歌方面更新了这个文件，我可能要等很久才发现我的缓存过期了。另一方面，用户浏览器上面可以装有一下拦截插件，会去拦截谷歌的统计收集。因此这两个方面都会影响到我们的用户统计。<p>直到昨天看到这篇文章，我才知道原来可以使用 Nginx 来调用 Google Analytics 的接口来统计用户的访问。<p>这样做的话，用户方面不再需要请求那个文件并与谷歌服务器进行交互，一方面提高了速度，另一方面减少了被用户浏览器拦截的可能，使得统计更加精确！<h2>配置</h2><p>将下面的代码进行想对应的修改之后填入到你的 Nginx 相应的配置文件的适当位置中<p>如果想知道详细的配置意义，请参考文末的参考资料。<pre><code class=language-nginx>userid on;
+userid_name cid;
+userid_domain [domain];
+userid_path /;
+userid_expires max;
+
+location @tracker {
+    internal;
+    proxy_method GET;
+    proxy_pass https://ssl.google-analytics.com/collect?v=1&amp;tid=[UA-XXXXXXXX-Y]&amp;$uid_set$uid_got&amp;t=pageview&amp;dh=$host&amp;dp=$uri&amp;uip=$remote_addr&amp;dr=$http_referer&amp;z=$msec;
+    proxy_set_header User-Agent $http_user_agent;
+    proxy_pass_request_headers off;
+    proxy_pass_request_body off;
+}
+
+location / {
+    try_files $uri $uri/ =404;
+    post_action @tracker;
+}
+</code></pre><p>遵守 DNT (Do Not Track) 的写法<pre><code class=language-nginx>location / {
+    try_files $uri $uri/ =404;
+    if ($http_dnt != 1) {post_action @tracker;}
+}
+</code></pre><p>配置中有两个需要更改的地方，一个是 <code>[domain]</code> ，另一个是 <code>[UA-XXXXXXXX-Y]</code>。第一个填写你的域名，第二个填写你之前申请下来的 TID<p>修改完成后保存 <code>reload</code> 一下 <code>Nginx</code> 即可。<h2>体验</h2><p>当我将我的网站切换到这个方案之后，有几点感受<h3>加快了网站速度</h3><p>由于加载少了一个文件，也少了与谷歌服务的异步交互，所以网站的速度加快了，也减少了用户访问所消耗的流量。<h3>统计更加精确</h3><p>之前的话，统计的只是能正常加载 <code>javascript</code> 脚本的浏览器的用户，而现在的话能统计的更多。<p>包括通过 <code>curl</code> 、 <code>httpie</code> 请求的，都能正常统计进去。<p>唯一的一点缺陷就是，我的网站使用了一些第三方的监控，而这个也会被统计进去。不过这个可以通过谷歌统计后台的过滤器给过滤掉，这样的话就会更加精确了。<h2>参考资料</h2><p><a href=https://darknode.in/network/nginx-google-analytics/ rel=nofollow>N​g­i​n​x 内配置 G​o​o​g​l​e A​n­a­l​y​t­i​c​s 指南</a></div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

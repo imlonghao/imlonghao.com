@@ -1,0 +1,49 @@
+<!doctype html><html lang=zh-cn><title>DN42 - 一个大型的 VPN 网络 - imlonghao</title><meta name=description content="DN42 是一个大型的 VPN 网络，通过 GRE, OpenVPN, Tinc, IPsec 等隧道将不同地区的用户连接在一起，同时使用 BGP 协议宣告自己的网段，实现用户之间的互联互通。"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./45.html>DN42 - 一个大型的 VPN 网络</a></div></div><div class=clearfix></div><div id=title>DN42 - 一个大型的 VPN 网络</div><div id=content class=markdown-body><p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/uA86ewbPIyQElVm.jpg><h2>简介</h2><p>DN42 是一个大型的 VPN 网络，通过 GRE, OpenVPN, Tinc, IPsec 等隧道将不同地区的用户连接在一起，同时使用 BGP 协议宣告自己的网段，实现用户之间的互联互通。<p>DN42 有一套完整的 AS 号的申请、IP 地址块的申请以及 <code>.dn42</code> 域名的申请系统，IP 地址块的分配不会于公网上的产生冲突，因为使用的是 <code>172.20.0.0/14</code> 以及 <code>fd00::/8</code> 这些私网地址。<p>那么，在 DN42 中我们能玩些什么呢？<h3>路由协议</h3><p>正如上面所说，DN42 使用 BGP 协议来让各个用户宣告自己的网段，从而实现用户之间的互联互通，因此 BGP 协议是十分重要的一个环节。当前 DN42 大概有 300 多个 AS 在线，有大概 580 条路由，应该足够我们进行研究的了。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/RoSHGbas5ZtBvPF.jpg><p>在我实际的操作中，使用到了 iBGP 、 eBGP 以及路由反射器，相信在以后进一步深入的话还会学习到很多好玩的东西，例如 Anycast 。<p>可能你会想说，eNSP 和 Cisco Packet Tracer 也同样可以做到类似的模拟，事实上的确如此，但是，有什么比在实际的网络上进行操作更加有趣的呢？而且，你不必成为 APNIC 的会员就可以拿到 AS 号，也不用交纳年费来买一个 IP 地址块，同时，也不用怕弄坏了实际的网络然后被上级责备。<h3>连接到 Hacker Spaces</h3><p>如今没有多少人有公网 IP ，就连宽带也逐渐开始分配 <code>100.64.0.0/16</code> 的 IP 地址，如果我们家里有一台树莓派什么的想要在外面访问，将自己的路由器加入到 DN42 也是一个不错的选择。我们可以随时随地连接上 DN42 网络，然后可以访问到自己的树莓派，也可以用树莓派给其他人提供各种各样的服务。<p>说人话就是，DN42 在一定程度上解决了 NAT 设备的访问问题，如果有担心安全问题的话，也可以设置一些访问控制进行访问的过滤。<h2>加入 DN42 网络</h2><p>请参考官方的入门文档：<a href=https://dn42.net/howto/Getting-started rel=nofollow>https://dn42.net/howto/Getting-started</a><h2>体验</h2><p>大概一个星期之前我就拿着我的几台吃灰 VPS 入了坑，在 <a href=http://io.nixnodes.net/ rel=nofollow>http://io.nixnodes.net/</a> 中注册了一个 AS 号：<code>4242421888</code> ，然后 ALLOCATED 了几个 IP 段给这几台不同地区的 VPS 使用。<p>一切就绪之后，我在 <a href=https://dn42.us/peers rel=nofollow>https://dn42.us/peers</a> 中联系到了 <a href=https://www.chrismoos.com/dn42-peering rel=nofollow>Chris Moons</a> ，通过和他做 peer ，我成功地将自己的 VPS 连接到了 DN42 网络中。<p>不得不说，DN42 和真实的互联网真的很相似。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/sEHhw5jKVcaNY1J.jpg><h3>BGP</h3><p>我目前使用的是 <code>Bird</code> 作为 BGP 宣告工具，之前是使用 <code>Quagga</code> 的，但是他对 IPv6 协议上不是很支持，在我的操作中遇到了不少问题，虽然他的使用方法很像是在操作 Cisco 设备，但是后来我还是把他撤掉换成了 <code>Bird</code> 。<p><code>Bird</code> 的语法虽然不像 <code>Quagga</code> 那样有 Cisco 设备操作经验就可以上手，但是他的配置及其简单明了。<p>如果想要了解的话可以去 DN42 的 Wiki 了解：<a href=https://dn42.net/howto/Bird rel=nofollow>https://dn42.net/howto/Bird</a><p>下面是我在 Bird 中运行 <code>show protocols all chrismoos</code> 的结果<pre><code>Preference:     100
+  Input filter:   (unnamed)
+  Output filter:  (unnamed)
+  Import limit:   10000
+    Action:       block
+  Routes:         468 imported, 0 filtered, 560 exported, 16 preferred
+  Route change stats:     received   rejected   filtered    ignored   accepted
+    Import updates:        4657978          0      46297    1252694    3358987
+    Import withdraws:        14184          0        ---      43809       7162
+    Export updates:        9025262     284456          0        ---    8740806
+    Export withdraws:         9173        ---        ---        ---     275578
+  BGP state:          Established
+    Neighbor address: 172.20.162.86
+    Neighbor AS:      4242421588
+    Neighbor ID:      172.20.16.133
+    Neighbor caps:    refresh AS4
+    Session:          external AS4
+    Source address:   172.22.68.1
+    Route limit:      468/10000
+    Hold timer:       179/240
+    Keepalive timer:  46/80
+</code></pre><h3>DNS</h3><p>DN42 不仅仅实现了域名的注册，也实现了根域名服务器以及下面的分级域名服务器<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/rTeBJxAazWsq8DR.png><p>下面是反向查询我的一个 ip 地址，可以看出他和我们的实际网络上的 DNS 查询是十分相似的<pre><code>root@cn-can01:~# dig @172.23.0.53 -x 172.22.68.8 +trace
+
+; &lt;&lt;&gt;&gt; DiG 9.9.5-9+deb8u6-Debian &lt;&lt;&gt;&gt; @172.23.0.53 -x 172.22.68.8 +trace
+; (1 server found)
+;; global options: +cmd
+.                       67      IN      NS      t.root-servers.dn42.
+.                       67      IN      NS      a.root-servers.dn42.
+.                       67      IN      NS      x.root-servers.dn42.
+.                       67      IN      NS      m.root-servers.dn42.
+;; Received 225 bytes from 172.23.0.53#53(172.23.0.53) in 1628 ms
+
+22.172.in-addr.arpa.    7200    IN      NS      x.in-addr-servers.dn42.
+22.172.in-addr.arpa.    7200    IN      NS      m.in-addr-servers.dn42.
+22.172.in-addr.arpa.    7200    IN      NS      c.in-addr-servers.dn42.
+;; Received 121 bytes from 172.23.67.67#53(m.root-servers.dn42) in 1319 ms
+
+68.22.172.in-addr.arpa. 7200    IN      NS      d.dn42-servers.dn42.
+68.22.172.in-addr.arpa. 7200    IN      NS      x.dn42-servers.dn42.
+;; Received 162 bytes from 172.23.67.53#53(m.in-addr-servers.dn42) in 1059 ms
+
+8.68.22.172.in-addr.arpa. 7200  IN      CNAME   8.0/27.68.22.172.in-addr.arpa.
+0/27.68.22.172.in-addr.arpa. 7200 IN    NS      ns2.imlonghao.dn42.
+0/27.68.22.172.in-addr.arpa. 7200 IN    NS      ns1.imlonghao.dn42.
+;; Received 124 bytes from fdea:a15a:77b9:4444::3#53(x.dn42-servers.dn42) in 349 ms
+</code></pre><h2>Peers</h2><p>最后，如果你想加入的话，可以联系我，也可以去到 dn42@hackint 这个 IRC 频道寻求帮助</div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

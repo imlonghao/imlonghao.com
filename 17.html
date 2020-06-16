@@ -1,0 +1,28 @@
+<!doctype html><html lang=zh-cn><title>「翻译」阻止 DHCP 修改 resolv.conf 文件 - imlonghao</title><meta name=description content="最近在 vultr 新建了一个德国的 VPS ，由于我的某些需求，需要使用 VPS 访问某个域名下的资源。但很不幸，每次我尝试去连接这个资源的都是，都是提示域名解析失败诸如此类的错误，经过检查，我发现是 vultr 自带的 DNS 的问题造成的。"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./17.html>「翻译」阻止 DHCP 修改 resolv.conf 文件</a></div></div><div class=clearfix></div><div id=title>「翻译」阻止 DHCP 修改 resolv.conf 文件</div><div id=content class=markdown-body><p>原文于：<a href=https://www.vultr.com/docs/stop-dhcp-from-changing-resolve-conf rel=nofollow>https://www.vultr.com/docs/stop-dhcp-from-changing-resolve-conf</a><h2>前言</h2><p>最近在 vultr 新建了一个德国的 VPS ，由于我的某些需求，需要使用 VPS 访问某个域名下的资源。但很不幸，每次我尝试去连接这个资源的都是，都是提示域名解析失败诸如此类的错误，经过检查，我发现是 vultr 自带的 DNS 的问题造成的。<p>在修改这个 DNS 的过程中，我尝试去修改 <code>/etc/resolv.conf</code> 文件，但是每当机器重启， DNS 又会自动变为原来的那个很烂的 DNS ，经过一翻寻找，找到了官方的这篇文章。<h2>正文</h2><p>对于使用 DHCP 的用户来说，很多时候你需要修改 <code>/etc/resolv.conf</code> 来使用其他的 DNS 服务器。那么，经过了一段时间（或者是经过了机器重启）之后，你会发现你所修改的 <code>/etc/resolv.conf</code> 文件会被恢复为原来的样子。<p>以下教程讲述了三个阻止 DHCP 修改/etc/resolv.conf 文件的方法，适用于 Debian 或者是 Ubuntu。<h3>把接口设置为静态</h3><p>在一台云 VPS 上，我十分不建议你使用这种方式。
+如果使用这种方式，你可能会发现重启的过程（直到你可以通过 SSH 连接）会更加长一些。
+首先，我们需要直到我们的 IP 地址，网络掩码以及网关地址。使用下面的命令：<pre><code>ifconfig | grep &quot;inet addr&quot; | head -n 1 | awk '{print $2, $4}'
+</code></pre><p>译者注：Debian 8 的可能是下面这条命令<pre><code>ifconfig | grep &quot;inet Adresse&quot; | head -n 1 | awk '{print $2, $4}'
+</code></pre><p>这会显示出服务器的 IP 地址以及网络掩码。让我们来看一看输出<pre><code>addr:1.2.3.4 Mask:255.255.254.0
+</code></pre><p>译者注：Debian 8 的可能是下面这条输出<pre><code>Adresse:1.2.3.4 Maske:255.255.254.0
+</code></pre><p>服务器的 IP 地址就是 1.2.3.4，子网掩码就是 255.255.254.0<p>运行下面这条命令来获得网关地址。<pre><code>netstat -rn | grep '^0.0.0.0' | awk '{print $2}'
+</code></pre><p>在这个例子中，我们假定网关地址就是 <code>1.2.3.1</code><p>现在我们已经有了 IP/子网掩码/网关地址了，修改 <code>/etc/network/interfaces</code> 文件<pre><code>vim /etc/network/interfaces
+</code></pre><p>作出下面的修改<pre><code># Comment out this line
+# iface eth0 inet dhcp
+
+# Add these contents
+iface eth0 inet static
+address 1.2.3.4
+mask 255.255.254.0
+gateway 1.2.3.1
+</code></pre><p><strong>请记住，你必修将上面的 IP 等数据改为你服务器实际的数据。</strong><p>保存并关闭，然后重启 VPS 。<h3>写保护你的 DNS 服务器</h3><p>通过修改 <code>/etc/resolv.conf</code> 来修改你的 DNS 服务器。一旦你作出了修改，写保护这个文件<pre><code>chattr +i /etc/resolv.conf
+</code></pre><p>这个+i 的选项就是为文件 <code>/etc/resolv.conf</code> 添加了写保护，因此任何人都不可以修改他，甚至是 root 用户也不行！<p>如果你需要取消写保护，使用下面的命令：<pre><code>chattr -i /etc/resolv.conf
+</code></pre><h3>使用 DHCP 钩子</h3><p>这是我最推荐使用的方法。<p>修改 <code>/etc/dhcp/dhclient-enter-hooks.d/nodnsupdate</code> 文件。<pre><code>vim /etc/dhcp/dhclient-enter-hooks.d/nodnsupdate
+</code></pre><p>作出以下的修改<pre><code>#!/bin/sh
+make_resolv_conf(){
+    :
+}
+</code></pre><p>保存并退出<p>给文件 <code>nodnsupdate</code> 添加可执行权限<pre><code>chmod +x /etc/dhcp/dhclient-enter-hooks.d/nodnsupdate
+</code></pre><p>重启系统，现在你就可以任性地修改 <code>/etc/resolv.conf</code> 文件而且不会担心被回滚了。</div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

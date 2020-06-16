@@ -1,0 +1,69 @@
+<!doctype html><html lang=zh-cn><title>轻松组建分布式 pyspider 集群 - imlonghao</title><meta name=description content="写爬虫爬站，你只有一台机子怎么能叫一个科学的、高效的爬虫呢？你起码得要有成百上千台机子一起跑才叫爬虫吧~当然，我是开玩笑的，而且我觉得谁没事开成百上千个服务器来跑爬虫（当然，除了B/G等）"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./10.html>轻松组建分布式 pyspider 集群</a></div></div><div class=clearfix></div><div id=title>轻松组建分布式 pyspider 集群</div><div id=content class=markdown-body><h2>前言</h2><p>写爬虫爬站，你只有一台机子怎么能叫一个科学的、高效的爬虫呢？你起码得要有成百上千台机子一起跑才叫爬虫吧~当然，我是开玩笑的，而且我觉得谁没事开成百上千个服务器来跑爬虫（当然，除了 B/G 等）<p>使用 pyspider 也有一段时间了，一直比较郁闷的是，这是一个可以分布式运行的爬虫框架，那究竟怎么能让他分布式起来呢？<p>趁着现在这段时间非常有空，于是我继续翻阅了<a href=http://blog.binux.me/2014/02/pyspider-architecture/ rel=nofollow>pyspider 架构设计</a>，终于得到了我的答案，下面我就来演示演示如何组件分布式的 pyspider 集群。<h2>理论</h2><p>以下内容摘自框架设计<p>pyspider 的架构主要分为 scheduler（调度器）, fetcher（抓取器）, processor（脚本执行）：<p><img class=lazy data-src=https://imlonghao.com/files/9/5bbb2438320f7.jpg><ul><li>各个组件间使用消息队列连接，除了 scheduler 是单点的，fetcher 和 processor 都是可以多实例分布式部署的。 scheduler 负责整体的调度控制<li>任务由 scheduler 发起调度，fetcher 抓取网页内容， processor 执行预先编写的 python 脚本，输出结果或产生新的提链任务（发往 scheduler），形成闭环。<li>每个脚本可以灵活使用各种 python 库对页面进行解析，使用框架 API 控制下一步抓取动作，通过设置回调控制解析动作。</ul><p>意思就是，如果我们想要进行分布式的运行，那么我们需要公用 master 的 scheduler ，其他 slave 机子只需要自己跑自己的 fetcher 和 processor 即可<h2>组建</h2><h3>安装 pyspider</h3><p>敬请参阅：<a href=https://imlonghao.com/9.html rel=nofollow>Debian 8.1 安装配置 pyspider 爬虫</a><h3>pyspider 设置</h3><p>请参照上一篇文章我所写的配置<p>由于 MySQL 和 redis 的服务器地址都已经不是本地的 <code>127.0.0.1</code> ，因此我们要将其设置为 master 或者你 MySQL 的服务器 IP。<p>另外，我们要将 fetcher 设置 <code>xmlrpc-host</code> 地址，如果你修改了默认的地址可能需要设置 <code>xmlrpc-port</code> ，这都是因人而异的。<p>我的设置如下：<pre><code class=language-json>{
+  &quot;taskdb&quot;: &quot;mysql+taskdb://pyspider:pyspider-pass@192.168.1.3:3306/taskdb&quot;,
+  &quot;projectdb&quot;: &quot;mysql+projectdb://pyspider:pyspider-pass@192.168.1.3:3306/projectdb&quot;,
+  &quot;resultdb&quot;: &quot;mysql+resultdb://pyspider:pyspider-pass@192.168.1.3:3306/resultdb&quot;,
+  &quot;message_queue&quot;: &quot;redis://192.168.1.3:6379/db&quot;,
+  &quot;phantomjs-proxy&quot;: &quot;127.0.0.1:25555&quot;,
+  &quot;fetcher&quot;: {
+    &quot;xmlrpc-host&quot;: &quot;192.168.1.3&quot;
+  }
+}
+</code></pre><h3>supervisor 配置</h3><p>好吧这里并不需要参考上一篇文章的设置。<p>上一篇文章我们直接使用的是 <code>/usr/local/bin/pyspider -c /pyspider/config.json</code> 来运行，默认就是 <code>ALL</code> ，意思是将所有的模块都运行。<p>而现在，我们只是在 slave 中运行的，根据上面所说的，我们只需要运行 fetcher 和 processor 就好了，我顺便也把 phantomjs 也运行了吧，因为我指向的是 127.0.0.1<p>这里我们的 supervisor 运行到了组的概念。<pre><code>[group:pyspider]
+programs=pyspider-fetcher,pyspider-processor,pyspider-phantomjs
+
+[program:pyspider-fetcher]
+command=/usr/local/bin/pyspider -c /pyspider/config.json fetcher
+autorestart=true
+user=pyspider
+group=pyspider
+directory=/pyspider
+stopasgroup=true
+
+[program:pyspider-processor]
+command=/usr/local/bin/pyspider -c /pyspider/config.json processor
+autorestart=true
+user=pyspider
+group=pyspider
+directory=/pyspider
+stopasgroup=true
+
+[program:pyspider-phantomjs]
+command=/usr/local/bin/pyspider -c /pyspider/config.json phantomjs
+autorestart=true
+user=pyspider
+group=pyspider
+directory=/pyspider
+stopasgroup=true
+</code></pre><p>同样将配置文件写入到 <code>/etc/supervisor/conf.d/pyspider.conf</code> ，写入后，运行 <code>supervisorctl reload</code> 刷新配置，即会自动运行。<h2>测试</h2><p>运行好 slave 后，我担心的就是，他会不会没有运行成功呢？<p>有两种方法可以检验，一是看 supervisor 的运行日志，如果你看到有信息的话就说明成功了；二我就是爬一个我可控的站，然后去看日志。<p>很明显我现在要讲的是第二种方法。<pre><code class=language-python>#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+# Created on 2015-06-11 13:24:29
+# Project: imlonghao
+
+from pyspider.libs.base_handler import *
+
+class Handler(BaseHandler):
+    crawl_config = {
+    }
+
+    def on_start(self):
+        for i in range(1,11111):
+            self.crawl('https://imlonghao.com/%s.html' % str(i), callback=self.detail_page)
+
+    @config(priority=2)
+    def detail_page(self, response):
+        return {
+            &quot;url&quot;: response.url,
+            &quot;title&quot;: response.doc('title').text(),
+        }
+</code></pre><p>我新创建了一个新的 project 来跑我自己的博客，然后我用 tcpdump 来看连接（好吧其实我应该看 Nginx 日志的）<p>效果如下：<pre><code>root@imlonghao:~# tcpdump -i eth0 -tnn dst port 443 -c 1000 | awk -F&quot;.&quot; '{print $1&quot;.&quot;$2&quot;.&quot;$3&quot;.&quot;$4}' | sort | uniq -c | sort -nr |head -20
+tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+listening on eth0, link-type EN10MB (Ethernet), capture size 262144 bytes
+1000 packets captured
+1006 packets received by filter
+0 packets dropped by kernel
+    492 IP *.*.*.221
+    463 IP *.*.*.203
+</code></pre><p>我们可以看到目前我的 master 和一台 slave 都是正常运行的了，并且两台在相同时间内的请求数差别不大，应该是正常运行了！<h2>后记</h2><p>安装好 slave 后，由于我用的是 iwStack 的云 VPS ，我可以将这台安装好的 VPS 配置成模板，如果遇到需要大量 VPS 的话，我只需要新建一台 VPS 并且使用这个模板即可，根本不需要再 SSH 连接进去进行其他的操作，也是非常简单的了。<p>DigitalOcean 和 Vultr 等同理<p>若有不对，敬请指出</div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

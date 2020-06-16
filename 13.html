@@ -1,0 +1,38 @@
+<!doctype html><html lang=zh-cn><title>发布 Python 库到 pypi 服务器 - imlonghao</title><meta name=description content="首先，你需要一个setup.py文件"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./13.html>发布 Python 库到 pypi 服务器</a></div></div><div class=clearfix></div><div id=title>发布 Python 库到 pypi 服务器</div><div id=content class=markdown-body><h2>准备</h2><p>首先，你需要一个 <code>setup.py</code> 文件<p>这是我一个程序中的例子：<a href=https://github.com/imlonghao/portstat rel=nofollow>portstat</a><pre><code class=language-python>from setuptools import setup, find_packages
+from os import path
+from codecs import open
+
+here = path.abspath(path.dirname(__file__))
+
+with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
+
+setup(
+    name='portstat',
+    version='0.0.3',
+    keywords=('port', 'monitor', 'traffic'),
+    url='https://github.com/imlonghao/portstat',
+    license='Apache License 2.0',
+    author='imlonghao',
+    author_email='fbi@fastmail.com',
+    description='A simple port traffic monitor',
+    long_description=long_description,
+    packages=find_packages(),
+    platforms='any',
+    entry_points={
+        'console_scripts': [
+            'portstat=portstat.portstat:main'
+        ]
+    }
+)
+</code></pre><h2>发布</h2><pre><code>python setup.py bdist_egg
+python setup.py sdist
+python setup.py register
+python setup.py sdist upload
+</code></pre><h2>测试服务器</h2><pre><code>python setup.py register -r &quot;https://testpypi.python.org/pypi&quot;
+python setup.py sdist upload -r &quot;https://testpypi.python.org/pypi&quot;
+</code></pre><p>安装的话就是通过-i 参数指定服务器<pre><code>pip install -i &quot;https://testpypi.python.org/pypi&quot; portstat
+</code></pre></div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

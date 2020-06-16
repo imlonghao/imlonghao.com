@@ -1,0 +1,74 @@
+<!doctype html><html lang=zh-cn><title>Debian 7.8 (Wheezy) 升级 Debian 8.0 (Jessie) 备忘及教程 - imlonghao</title><meta name=description content="本教程在 Debian 7.8 (Wheezy) 中测试通过，但由于服务器 / VPS的不同，不保证此教程在所有服务器 / VPS中都能正常运行。"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./4.html>Debian 7.8 (Wheezy) 升级 Debian 8.0 (Jessie) 备忘及教程</a></div></div><div class=clearfix></div><div id=title>Debian 7.8 (Wheezy) 升级 Debian 8.0 (Jessie) 备忘及教程</div><div id=content class=markdown-body><h2>免责声明</h2><p>本教程在 Debian 7.8 (Wheezy) 中测试通过，但由于服务器 / VPS 的不同，不保证此教程在所有服务器 / VPS 中都能正常运行。<p>因此，请先做完整的备份或者服务器快照！<h2>准备阶段</h2><p>我测试的是 ikoula 的 5 欧独立服务器，CPU 是 ATOM 520<pre><code>root@imlonghao:~# cat /etc/debian_version
+7.8
+</code></pre><p>如果你不是 Debian 7.8 的，请参照下文升级到这个版本（部分被省略）<pre><code>root@imlonghao:~# apt-get update
+Hit http://ftp.debian.ikoula.com wheezy Release.gpg
+Hit http://ftp.debian.ikoula.com wheezy Release
+Hit http://ftp.debian.ikoula.com wheezy/main Sources
+Hit http://ftp.debian.ikoula.com wheezy/contrib Sources
+Hit http://ftp.debian.ikoula.com wheezy/non-free Sources
+Hit http://ftp.debian.ikoula.com wheezy/main amd64 Packages
+[...]
+Reading package lists... Done
+root@imlonghao:~# apt-get dist-upgrade
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+Calculating upgrade... Done
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+</code></pre><p>升级过程会更新我们系统的内核，因此，如果你对内核有要求的话请谨慎！<p>这是升级前的内核<pre><code>root@imlonghao:~# uname -a
+Linux imlonghao 3.2.0-4-amd64 #1 SMP Debian 3.2.65-1+deb7u2 x86_64 GNU/Linux
+</code></pre><p>这是升级前的 <code>sources.list</code><pre><code>root@imlonghao:~# cat /etc/apt/sources.list
+deb http://ftp.debian.ikoula.com/debian/ wheezy main contrib non-free
+deb-src http://ftp.debian.ikoula.com/debian/ wheezy main contrib non-free
+
+deb http://security.debian.org/ wheezy/updates main contrib non-free
+deb-src http://security.debian.org/ wheezy/updates main contrib non-free
+
+# wheezy-updates, previously known as 'volatile'
+deb http://ftp.fr.debian.org/debian/ wheezy-updates main
+deb-src http://ftp.fr.debian.org/debian/ wheezy-updates main
+</code></pre><p>我们需要将 <code>sources.list</code>中的 <code>wheezy</code> 替换为 <code>jessie</code> ，运行下面语句<pre><code>root@imlonghao:~# sed -i &quot;s/wheezy/jessie/g&quot; /etc/apt/sources.list
+root@imlonghao:~# cat /etc/apt/sources.list
+deb http://ftp.debian.ikoula.com/debian/ jessie main contrib non-free
+deb-src http://ftp.debian.ikoula.com/debian/ jessie main contrib non-free
+
+deb http://security.debian.org/ jessie/updates main contrib non-free
+deb-src http://security.debian.org/ jessie/updates main contrib non-free
+
+# jessie-updates, previously known as 'volatile'
+deb http://ftp.fr.debian.org/debian/ jessie-updates main
+deb-src http://ftp.fr.debian.org/debian/ jessie-updates main
+</code></pre><p>##开始升级<h3>更新源</h3><pre><code>root@imlonghao:~# apt-get update
+Get:1 http://ftp.debian.ikoula.com jessie Release.gpg [2,390 B]
+Get:2 http://ftp.debian.ikoula.com jessie Release [126 kB]
+Get:3 http://ftp.debian.ikoula.com jessie/main Sources [7,065 kB]
+Get:4 http://security.debian.org jessie/updates Release.gpg [1,571 B]
+Get:5 http://security.debian.org jessie/updates Release [61.5 kB]
+[...]
+Fetched 20.1 MB in 9s (2,208 kB/s)
+Reading package lists... Done
+</code></pre><p>开始更新，这里可能会比较耗时，不过我的 Atom 服务器用时也不长。<p>如果你的服务器丢包严重，建议使用 <code>screen</code><pre><code>root@imlonghao:~# apt-get dist-upgrade
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+Calculating upgrade... Done
+The following packages will be REMOVED:
+  [...]
+The following NEW packages will be installed:
+  [...]
+The following packages have been kept back:
+  [...]
+The following packages will be upgraded:
+  [...]
+322 upgraded, 197 newly installed, 3 to remove and 1 not upgraded.
+Need to get 221 MB of archives.
+After this operation, 387 MB of additional disk space will be used.
+Do you want to continue [Y/n]?
+</code></pre><p>更新完后，<code>reboot</code> 重启系统<h3>更新完毕</h3><p>重启系统后，我们就可以看到我们现在已经成功更新到 Debian8.0 了，而内核也有了升级。<pre><code>root@imlonghao:~# cat /etc/debian_version
+8.0
+root@imlonghao:~# uname -a
+Linux imlonghao 3.16.0-4-amd64 #1 SMP Debian 3.16.7-ckt9-3~deb8u1 (2015-04-24) x86_64 GNU/Linux
+</code></pre></div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

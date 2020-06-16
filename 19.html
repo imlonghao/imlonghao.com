@@ -1,0 +1,46 @@
+<!doctype html><html lang=zh-cn><title>Could not run curl-config 的解决方式 - imlonghao</title><meta name=description content="在安装pyspider的时候我就遇到了这个问题，pyspider依赖pycurl这个库，而pycurl要求系统中存在相对应的库。"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./19.html>Could not run curl-config 的解决方式</a></div></div><div class=clearfix></div><div id=title>Could not run curl-config 的解决方式</div><div id=content class=markdown-body><pre><code>Downloading/unpacking pycurl (from pyspider)
+  Downloading pycurl-7.19.5.1.tar.gz (142kB): 142kB downloaded
+  Running setup.py (path:/tmp/pip-build-DuBGJ5/pycurl/setup.py) egg_info for package pycurl
+    Traceback (most recent call last):
+      File &quot;&lt;string&gt;&quot;, line 17, in &lt;module&gt;
+      File &quot;/tmp/pip-build-DuBGJ5/pycurl/setup.py&quot;, line 634, in &lt;module&gt;
+        ext = get_extension(split_extension_source=split_extension_source)
+      File &quot;/tmp/pip-build-DuBGJ5/pycurl/setup.py&quot;, line 392, in get_extension
+        ext_config = ExtensionConfiguration()
+      File &quot;/tmp/pip-build-DuBGJ5/pycurl/setup.py&quot;, line 65, in __init__
+        self.configure()
+      File &quot;/tmp/pip-build-DuBGJ5/pycurl/setup.py&quot;, line 100, in configure_unix
+        raise ConfigurationError(msg)
+    __main__.ConfigurationError: Could not run curl-config: [Errno 2] No such file or directory
+    Complete output from command python setup.py egg_info:
+    Traceback (most recent call last):
+
+  File &quot;&lt;string&gt;&quot;, line 17, in &lt;module&gt;
+
+  File &quot;/tmp/pip-build-DuBGJ5/pycurl/setup.py&quot;, line 634, in &lt;module&gt;
+
+    ext = get_extension(split_extension_source=split_extension_source)
+
+  File &quot;/tmp/pip-build-DuBGJ5/pycurl/setup.py&quot;, line 392, in get_extension
+
+    ext_config = ExtensionConfiguration()
+
+  File &quot;/tmp/pip-build-DuBGJ5/pycurl/setup.py&quot;, line 65, in __init__
+
+    self.configure()
+
+  File &quot;/tmp/pip-build-DuBGJ5/pycurl/setup.py&quot;, line 100, in configure_unix
+
+    raise ConfigurationError(msg)
+
+__main__.ConfigurationError: Could not run curl-config: [Errno 2] No such file or directory
+
+----------------------------------------
+Cleaning up...
+Command python setup.py egg_info failed with error code 1 in /tmp/pip-build-DuBGJ5/pycurl
+Storing debug log for failure in /root/.pip/pip.log
+</code></pre><p>在安装 <code>pyspider</code> 的时候我就遇到了这个问题， <code>pyspider</code> 依赖 <code>pycurl</code> 这个库，而 <code>pycurl</code> 要求系统中存在相对应的库。<p>经过我的测试， <code>curl</code> 是正确安装了的，但是却依然提示了找不到 <code>curl-config</code> 的问题<p>解决方案：<pre><code>apt-get install libcurl4-gnutls-dev
+</code></pre><p>运行安装后即可正常安装 <code>pycurl</code> 。</div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>

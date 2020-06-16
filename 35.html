@@ -1,0 +1,194 @@
+<!doctype html><html lang=zh-cn><title>如何启用 Certificate Transparency - imlonghao</title><meta name=description content="根据维基百科的解释，Certificate Transparency (CT) 目前是一项实验性的 IETF 开放标准以及开放源代码的框架，用于监控以及审计数字证书。通过证书日志、监控以及审计系统，将允许网站用户以及域名所有者来判断辨别错误或者恶意签发的证书，并且可以找出那些流氓的 CA 。"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=renderer content="webkit"><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><link rel=dns-prefetch href=//vip1.loli.net><link rel=stylesheet href=/static/hw3x7x.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqusjs.css integrity="sha256-GxdCIOyfxQ1OBfS99qAIJDoGK1ADuBsxhMTqXG82fAY=" crossorigin=anonymous><script src=/static/hw3x7x.js async></script><script src=https://cdn.jsdelivr.net/npm/disqusjs@1.3.0/dist/disqus.js integrity="sha256-LVaMHPQ2zLqOc5rXSAfr4d1PIkEGNLyyUTDNPZmTtUw=" crossorigin=anonymous></script><script src=//instant.page/3.0.0 type=module defer integrity=sha384-OeDn4XE77tdHo8pGtE1apMPmAipjoxUQ++eeJa6EtJCfHlvijigWiJpD7VDPWXV1></script><link rel=alternate type=application/rss+xml title="imlonghao Feed" href=https://imlonghao.com/feed.xml><div id=container><div id=header><div id=post-nav><a href=./>Home</a>
+&nbsp;»&nbsp;
+<a href=./35.html>如何启用 Certificate Transparency</a></div></div><div class=clearfix></div><div id=title>如何启用 Certificate Transparency</div><div id=content class=markdown-body><h2>简单认识 Certificate Transparency</h2><p>根据维基百科的解释，Certificate Transparency (CT) 目前是一项实验性的 IETF 开放标准以及开放源代码的框架，用于监控以及审计数字证书。通过证书日志、监控以及审计系统，将允许网站用户以及域名所有者来判断辨别错误或者恶意签发的证书，并且可以找出那些流氓的 CA 。
+<small>翻译自维基百科：<a href=https://en.wikipedia.org/wiki/Certificate_Transparency rel=nofollow>https://en.wikipedia.org/wiki/Certificate_Transparency</a></small><p>更多参考：<a href=https://www.certificate-transparency.org/what-is-ct rel=nofollow>What is Certificate Transparency?</a><h2>Certificate Transparency 的用途</h2><p>Certificate Transparency 看上去很高端是不是，我相信你也没搞清楚这个证书透明度是做什么的，通过下面这个真实的例子我来给你简单讲述一下。<p>在我们访问一个 https 网站的时候，这些网站都会有一个 SSL 证书，来证明这个网站就是你要访问的这个网站，并且证明网站的数据在传输过程中并没有遭到篡改。相信大家都有过被运营商进行流量挟持，被运营商在你所想要访问的页面上插广告的经历，这是因为，http 协议并不是加密的，数据在传输过程中遭到了中间设备的挟持。而 https 可以解决这个问题，因为数据的传输过程是加密的，如果运营商想要进行挟持的话，他必须有一张受浏览器信任的证书，但是这个证书他们基本上是无法获得的。<p>对于我们普通站长所得到的证书来说，他是由 CA (证书颁发机构) 一层一层发下来的。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/q1d73YujxL4P6BH.png><p>以本站为例，本站的证书是由 <code>COMODO ECC Certification Authority</code> 签发给 <code>COMODO ECC Domain Validation Secure Server CA</code> 最后再签发给我 <code>imlonghao.com</code><p>而 <code>COMODO ECC Certification Authority</code> ，则是由 <code>AddTrust External CA Root</code> 签发，<code>AddTrust External CA Root</code> 是默认安装在我们的电脑或者浏览器之中，起到根证书的作用。<p>由我们电脑中位于信任区的根证书签发下来的证书，包括这些证书再签发下去的证书，在没有专门被 <code>revoke</code> 的情况下，都是会被我们的系统所信任的。<p>我们来看这样一条新闻：<a href=https://googleonlinesecurity.blogspot.hk/2015/09/improved-digital-certificate-security.html rel=nofollow>Improved Digital Certificate Security</a><p>这条新闻就告诉了我们 Certificate Transparency 的功用<p>我们先来看一看谷歌的证书链<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/6sVNuLIJCc7RfAH.png><p>由 <code>GeoTrust Global CA</code> 签发给 <code>Google Internet Authority G2</code> 然后给签发下去到具体的域名<p>而上述新闻当中，<code>Symantec’s Thawte-branded CA</code> 就错误地为 <code>google.com</code> 以及 <code>www.google.com</code> 签发了证书，这是相当危险的，万一有人拿到了私钥，就可以到处冒充谷歌了。<p>根据后面 Symantec 方面所作出的解释，证书是在内部测试流程中签发的，并且证书的有效期只有一天，而且证书并没有流出到公众，也没有对用户造成影响。<p>那么，谷歌是怎么知道 Symantec 签发了一个他们的证书呢？难道是 Symantec 公司有内鬼呢？<p>根据谷歌的通告，他们是通过 Certificate Transparency 的日志发现了这个证书。<p>引用 Jerry Qu 对 Certificate Transparency 的解释<pre><code>Certificate Transparency 的目标是提供一个开放的审计和监控系统，可以让任何域名所有者或者 CA 确定证书是否被错误签发或者被恶意使用，从而提高 HTTPS 网站的安全性。
+</code></pre><h2>如何启用 Certificate Transparency</h2><ul><li>X509v3 Certificate Extension<li>TLS Extension<li>OCSP Stapling</ul><p>关于三种方式的差异，请参考文末的参考资料。<h2>Nginx 通过 TLS 拓展启用 Certificate Transparency</h2><p>通过 <code>TLS Extension</code> 启用 <code>Certificate Transparency</code> 是一种比较通用的方式，无论你用的是哪一个 CA 签发下来的证书，都可以通过这种方式来启用 Certificate Transparency<h3>提交证书并获取 SCT 文件</h3><p>正如我们前面所说的，我们需要提交自己的证书到 CT Log 服务器中。这里我们用到了一个 GO 语言写的工具：<a href=https://github.com/grahamedgecombe/ct-submit rel=nofollow>ct-submit</a><p>通过下面的命令即可安装编译<pre><code>apt-get install golang git
+
+git clone https://github.com/grahamedgecombe/ct-submit
+cd ct-submit
+go build
+</code></pre><p>提交的命令大概如下<pre><code>./ct-submit [log服务器] &lt; [你的证书位置] &gt; [sct文件保存位置]
+</code></pre><p>需要讲一下的是，上面 <code>[你的证书位置]</code> 所指的是完整的证书链<p>例子<pre><code>./ct-submit ct.googleapis.com/aviator &lt; /var/ssl/chained.pem &gt; /var/scts/aviator.sct
+</code></pre><p>Log 服务器列表可以在这里找到：<a href=https://imququ.com/post/certificate-transparency.html rel=nofollow>Known Logs - Certificate Transparency</a><p>部分证书不能提交到部分的 Log 服务器中，谷歌官方的几个是可以的。<h3>编译 Nginx 的 nginx-ct 模块</h3><p>为了让我们的 Nginx 支持 Certificate Transparency ，我们就必须编译 <a href=https://github.com/grahamedgecombe/nginx-ct rel=nofollow>nginx-ct</a> 这个模块了<p>nginx-ct 对 OpenSSL 的版本有要求，要求必须是<ul><li>OpenSSL 1.0.2 or above.<li>BoringSSL 4fac72e or above.</ul><p>我们使用打过 CloudFlare 补丁的 OpenSSL 1.0.2 stable<p>安装一些编译所需要的库<pre><code>apt-get install libpcre3 libpcre3-dev openssl libssl-dev unzip build-essential zlib1g-dev
+</code></pre><p>准备好打过 CloudFlare 补丁的 OpenSSL 1.0.2 stable<pre><code>git clone https://github.com/cloudflare/sslconfig
+wget -O openssl.zip -c https://github.com/openssl/openssl/archive/OpenSSL_1_0_2-stable.zip
+unzip openssl.zip
+mv openssl-OpenSSL_1_0_2-stable/ openssl
+cd openssl &amp;&amp; patch -p1 &lt; ../sslconfig/patches/openssl__chacha20_poly1305_cf.patch &amp;&amp; cd ..
+</code></pre><p>准备编译 Nginx 以及 nginx-ct，截至目前 Nginx 1.9.11 并不是稳定版，所以请自行选择您的 Nginx 版本<pre><code>wget -c http://nginx.org/download/nginx-1.9.11.tar.gz
+tar zxf nginx-1.9.11.tar.gz
+wget -O nginx-ct.zip -c https://github.com/grahamedgecombe/nginx-ct/archive/v1.0.0.zip
+unzip nginx-ct.zip
+cd nginx-1.9.11/
+</code></pre><p>Nginx 编译参数，注意我们要加上我们的 nginx-ct 模块，以及指定我们所使用的 OpenSSL，编译参数我所使用的是官方 mainline 源安装中的 nginx 通过 <code>nginx -V</code> 所得到的参数，并未作过多修改。<pre><code>./configure --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-path=%{_libdir}/nginx/modules --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --pid-path=/var/run/nginx.pid --lock-path=/var/run/nginx.lock --http-client-body-temp-path=/var/cache/nginx/client_temp --http-proxy-temp-path=/var/cache/nginx/proxy_temp --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp --http-scgi-temp-path=/var/cache/nginx/scgi_temp --user=nginx --group=nginx --with-http_ssl_module --with-http_realip_module --with-http_addition_module --with-http_sub_module --with-http_dav_module --with-http_flv_module --with-http_mp4_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_random_index_module --with-http_secure_link_module --with-http_stub_status_module --with-http_auth_request_module --with-threads --with-stream --with-stream_ssl_module --with-http_slice_module --with-mail --with-mail_ssl_module --with-file-aio --with-http_v2_module --with-cc-opt='-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2' --with-ld-opt='-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,--as-needed' --with-ipv6 --add-module=../nginx-ct-1.0.0 --with-openssl=../openssl
+</code></pre><p>开始编译安装<pre><code>make &amp;&amp; make install
+</code></pre><p>贴一份我所使用的 <code>/etc/init.d/nginx</code> 文件<pre><code class=language-bash>#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          nginx
+# Required-Start:    $network $remote_fs $local_fs
+# Required-Stop:     $network $remote_fs $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Stop/start nginx
+### END INIT INFO
+
+# Author: Sergey Budnevitch &lt;sb@nginx.com&gt;
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+
+if [ -L $0 ]; then
+    SCRIPTNAME=`/bin/readlink -f $0`
+else
+    SCRIPTNAME=$0
+fi
+
+sysconfig=`/usr/bin/basename $SCRIPTNAME`
+
+[ -r /etc/default/$sysconfig ] &amp;&amp; . /etc/default/$sysconfig
+
+DESC=${DESC-nginx}
+NAME=${NAME-nginx}
+CONFFILE=${CONFFILE-/etc/nginx/nginx.conf}
+DAEMON=${DAEMON-/usr/sbin/nginx}
+PIDFILE=${PIDFILE-/var/run/nginx.pid}
+SLEEPSEC=1
+UPGRADEWAITLOOPS=5
+
+[ -x $DAEMON ] || exit 0
+
+DAEMON_ARGS=&quot;-c $CONFFILE $DAEMON_ARGS&quot;
+
+. /lib/init/vars.sh
+
+. /lib/lsb/init-functions
+
+do_start()
+{
+    start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON -- \
+        $DAEMON_ARGS
+    RETVAL=&quot;$?&quot;
+    return &quot;$RETVAL&quot;
+}
+
+do_stop()
+{
+    # Return
+    #   0 if daemon has been stopped
+    #   1 if daemon was already stopped
+    #   2 if daemon could not be stopped
+    #   other if a failure occurred
+    start-stop-daemon --stop --quiet --oknodo --retry=TERM/30/KILL/5 --pidfile $PIDFILE
+    RETVAL=&quot;$?&quot;
+    rm -f $PIDFILE
+    return &quot;$RETVAL&quot;
+}
+
+do_reload() {
+    #
+    start-stop-daemon --stop --signal HUP --quiet --pidfile $PIDFILE
+    RETVAL=&quot;$?&quot;
+    return &quot;$RETVAL&quot;
+}
+
+do_configtest() {
+    if [ &quot;$#&quot; -ne 0 ]; then
+        case &quot;$1&quot; in
+            -q)
+                FLAG=$1
+                ;;
+            *)
+                ;;
+        esac
+        shift
+    fi
+    $DAEMON -t $FLAG -c $CONFFILE
+    RETVAL=&quot;$?&quot;
+    return $RETVAL
+}
+
+do_upgrade() {
+    OLDBINPIDFILE=$PIDFILE.oldbin
+
+    do_configtest -q || return 6
+    start-stop-daemon --stop --signal USR2 --quiet --pidfile $PIDFILE
+    RETVAL=&quot;$?&quot;
+
+    for i in `/usr/bin/seq  $UPGRADEWAITLOOPS`; do
+        sleep $SLEEPSEC
+        if [ -f $OLDBINPIDFILE -a -f $PIDFILE ]; then
+            start-stop-daemon --stop --signal QUIT --quiet --pidfile $OLDBINPIDFILE
+            RETVAL=&quot;$?&quot;
+            return
+        fi
+    done
+
+    echo $&quot;Upgrade failed!&quot;
+    RETVAL=1
+    return $RETVAL
+}
+
+case &quot;$1&quot; in
+    start)
+        [ &quot;$VERBOSE&quot; != no ] &amp;&amp; log_daemon_msg &quot;Starting $DESC &quot; &quot;$NAME&quot;
+        do_start
+        case &quot;$?&quot; in
+            0|1) [ &quot;$VERBOSE&quot; != no ] &amp;&amp; log_end_msg 0 ;;
+            2) [ &quot;$VERBOSE&quot; != no ] &amp;&amp; log_end_msg 1 ;;
+        esac
+        ;;
+    stop)
+        [ &quot;$VERBOSE&quot; != no ] &amp;&amp; log_daemon_msg &quot;Stopping $DESC&quot; &quot;$NAME&quot;
+        do_stop
+        case &quot;$?&quot; in
+            0|1) [ &quot;$VERBOSE&quot; != no ] &amp;&amp; log_end_msg 0 ;;
+            2) [ &quot;$VERBOSE&quot; != no ] &amp;&amp; log_end_msg 1 ;;
+        esac
+        ;;
+  status)
+        status_of_proc -p &quot;$PIDFILE&quot; &quot;$DAEMON&quot; &quot;$NAME&quot; &amp;&amp; exit 0 || exit $?
+        ;;
+  configtest)
+        do_configtest
+        ;;
+  upgrade)
+        do_upgrade
+        ;;
+  reload|force-reload)
+        log_daemon_msg &quot;Reloading $DESC&quot; &quot;$NAME&quot;
+        do_reload
+        log_end_msg $?
+        ;;
+  restart|force-reload)
+        log_daemon_msg &quot;Restarting $DESC&quot; &quot;$NAME&quot;
+        do_configtest -q || exit $RETVAL
+        do_stop
+        case &quot;$?&quot; in
+            0|1)
+                do_start
+                case &quot;$?&quot; in
+                    0) log_end_msg 0 ;;
+                    1) log_end_msg 1 ;; # Old process is still running
+                    *) log_end_msg 1 ;; # Failed to start
+                esac
+                ;;
+            *)
+                # Failed to stop
+                log_end_msg 1
+                ;;
+        esac
+        ;;
+    *)
+        echo &quot;Usage: $SCRIPTNAME {start|stop|status|restart|reload|force-reload|upgrade|configtest}&quot; &gt;&amp;2
+        exit 3
+        ;;
+esac
+
+exit $RETVAL
+</code></pre><p>杂项（依照的是我的 <code>nginx.conf</code> ）<pre><code>chmod +x /etc/init.d/nginx
+mkdir -p /var/cache/nginx/client_temp
+mkdir /etc/nginx/conf.d
+/usr/sbin/update-rc.d -f nginx defaults
+</code></pre><h3>修改 nginx 配置启用 ct</h3><p><code>ssl_ct_static_scts</code> 指向的是存放我们 sct 文件的文件夹，因为 sct 文件可能有很多个&mldr;<p>将下列两行加上到你站点的配置文件即可，具体参数具体而定。<pre><code>ssl_ct on;
+ssl_ct_static_scts /var/scts;
+</code></pre><p>最后重启一下你的 Nginx ，应该就是大功告成的了。<p><img class=lazy data-src=https://vip1.loli.net/2019/12/26/wpAqN7jFJOIfgbX.jpg><h2>参考资料</h2><p><a href=https://www.certificate-transparency.org/ rel=nofollow>Certificate Transparency 官方网站</a><p><a href=https://imququ.com/post/certificate-transparency.html rel=nofollow>Certificate Transparency 那些事 | JerryQu 的小站</a></div></div><div id=disqus_thread></div><div id=footer><span>Copyright © 2015 - 2020 imlonghao. Theme by
+<a href=http://simiki.org/ target=_blank rel="noopener noreferrer">Simiki</a>. CC BY-NC-SA 4.0</span></div><script src=https://cdn.jsdelivr.net/npm/cfga@1.0.3/cfga.min.js integrity="sha256-TXHTTKAPRQ9mgacgN+couk0xnzQ6uOXTZ5ojH1q6GUk=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.3.0/dist/lazyload.min.js integrity="sha256-bojBIKfs4l2WDcJODncBIGEe5fhU7/sM3zRO5/f2nqE=" crossorigin=anonymous async></script>
